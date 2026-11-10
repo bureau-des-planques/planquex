@@ -512,7 +512,44 @@ describe('l’écran large : la composition du téléphone, plus de colonne de d
     expect(declarationsDansMedia(CSS, PARTAGE, '.battle__table').get('overflow')).toBe('hidden');
     expect(declarationsDansMedia(CSS, PARTAGE, '.battle .board').get('transform')).toContain('rotateX(4deg)');
     expect(declarationsDansMedia(CSS, PARTAGE, '.battle .hand').get('height')).toBe('3.5rem');
-    expect(declarationsDansMedia(CSS, PARTAGE, '.battle .hand .card__voile').get('top')).toBe('0');
+    expect(declarationsDansMedia(CSS, PARTAGE, '.battle .hand .card--en-main .card__face').get('justify-content')).toBe(
+      'flex-start'
+    );
+  });
+
+  /**
+   * **Le nom de la carte de main se lit dans la bande de 56 px** (#744, D-164 (1)) : la face se remplit par le
+   * haut et le nom est au plancher `--fs-xs` (11,2 px), pas `--fs-2xs`. Le contrôle mord : la règle d'avant
+   * (voile en `top: 0` mais face remplie par le bas, nom en `--fs-2xs`) est refusée.
+   */
+  function nomDeMain(css: string): { face: string | undefined; taille: string | undefined } {
+    return {
+      face: declarationsDansMedia(css, PARTAGE, '.battle .hand .card--en-main .card__face').get('justify-content'),
+      taille: declarationsDansMedia(css, PARTAGE, '.battle .hand .card--en-main .card__name').get('font-size')
+    };
+  }
+
+  it('le nom de la carte de main est en tête et au plancher --fs-xs, pas --fs-2xs (#744)', () => {
+    const { face, taille } = nomDeMain(CSS);
+    expect(face).toBe('flex-start');
+    expect(taille).toBe('var(--fs-xs)');
+    expect(CSS).toMatch(/--fs-xs:\s*0\.7rem;/);
+  });
+
+  it('le voile de la main passe devant l’illustration, à toutes les largeurs (#744)', () => {
+    expect(declarationsDeBase(CSS, '.card--en-main .card__voile').get('z-index')).toBe('1');
+    // Le contrôle mord : sans la règle, la lecture rend `undefined`.
+    expect(
+      declarationsDeBase('.card__voile { position: relative; }', '.card--en-main .card__voile').get('z-index')
+    ).toBeUndefined();
+  });
+
+  it('le contrôle mord : un nom en --fs-2xs, ou une face remplie par le bas, est refusé (#744)', () => {
+    const fautif =
+      '@media (max-width: 639px), (min-width: 900px) { .battle .hand .card--en-main .card__name { font-size: var(--fs-2xs); } }';
+    const { face, taille } = nomDeMain(fautif);
+    expect(taille).not.toBe('var(--fs-xs)');
+    expect(face).not.toBe('flex-start');
   });
 
   it('le téléphone ne bouge pas : la main reste à 3,5 rem dans le média partagé', () => {

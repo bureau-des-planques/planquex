@@ -52,6 +52,13 @@ interface Props {
    * avec ce drapeau : la barre, le nom, le Seuil et l'illustration restent dans les deux modes.
    */
   annotations?: boolean;
+  /**
+   * **La main de combat au repos** (D-193, #744) : le bas de la carte est rogné par la fenêtre, seule la
+   * bande de tête (56 px) se voit. Le nom (et le Stress) passent donc **avant** l'illustration dans le
+   * DOM et se posent **en tête** de carte, sous les deux pastilles ; le pied n'y est pas lu. Sans effet
+   * hors `plateau` : la Collection, le Deck et la fiche gardent leur ordre.
+   */
+  enMain?: boolean;
 }
 
 /** Les raretés à traitement holographique (`CARD-SPEC.md` §1) : étoiles et Couronne. */
@@ -85,6 +92,7 @@ export function CardView({
   seuil,
   plateau,
   annotations,
+  enMain,
   label
 }: Props) {
   // La planche de la carte, ou celle de sa base (D-139) : une seule résolution.
@@ -126,7 +134,8 @@ export function CardView({
     // animations `framer-motion` mais pas la transition CSS.
     immobile ? 'card--figee' : '',
     plateau ? 'card--plateau' : '',
-    plateau && annotations ? 'card--annotations' : ''
+    plateau && annotations ? 'card--annotations' : '',
+    plateau && enMain ? 'card--en-main' : ''
   ]
     .filter(Boolean)
     .join(' ');
@@ -195,23 +204,29 @@ export function CardView({
       ))
     : null;
 
+  const voile = (
+    <div className="card__voile">
+      {!planque && <span className="card__stage">{kindLabel(card).split(' · ')[0]}</span>}
+      <span className="card__name">{card.name}</span>
+      {/* Les Pressions sont une **annotation** du plateau (#189) : `sobre` ne les rend pas. */}
+      {planque && annotations && <div className="card__attacks">{pressions}</div>}
+      {barre}
+    </div>
+  );
+
   const contenu = plateau ? (
     // **Au plateau — portrait plein** (prototype B, 28/10/2026) : l'illustration couvre la
     // carte ; nom, Stress et (en `détaillé`) Pressions sont sur un voile en bas, le Seuil en
     // plaque discrète dans le coin. À 56–88 px de large, l'image est ce qui se reconnaît.
+    // **En main** (#744), le voile passe en tête du DOM : le nom est lu avant l'illustration.
     <div className="card__face">
+      {enMain && voile}
       {fenetre}
       <span className="card__emblem" title={faction.name} aria-hidden>
         {faction.glyph}
       </span>
       {seuilBadge}
-      <div className="card__voile">
-        {!planque && <span className="card__stage">{kindLabel(card).split(' · ')[0]}</span>}
-        <span className="card__name">{card.name}</span>
-        {/* Les Pressions sont une **annotation** du plateau (#189) : `sobre` ne les rend pas. */}
-        {planque && annotations && <div className="card__attacks">{pressions}</div>}
-        {barre}
-      </div>
+      {!enMain && voile}
     </div>
   ) : (
     // **Hors plateau — gabarit Pocket** (prototype C, 28/10/2026, relu) : en-tête nom / Seuil /

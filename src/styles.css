@@ -9166,19 +9166,35 @@ h2 {
   text-transform: uppercase;
 }
 
-/* Lisibilité de la main au repos, à 56 px visibles (D-182, #744) : le nom passe **en tête** de la
-   carte — le pied, rogné par le bas de la fenêtre, n'est plus lu — sous la pastille de coût, avec
-   un voile sombre qui tient la lecture sur l'illustration. Le plancher est `--fs-xs` (D-164 (1)). */
+/* En main, le voile précède l'illustration dans le DOM (`CardView enMain`) : l'illustration, posée en absolu,
+   se peindrait **par-dessus** le nom. Le voile passe devant, à toutes les largeurs (le DOM ne change pas
+   avec le média). */
+.card--en-main .card__voile {
+  z-index: 1;
+}
+
+/* Lisibilité de la main au repos, à 56 px visibles (D-182, #744) : `CardView enMain` met le nom **en tête**
+   du DOM, et ici en tête de la carte — le pied, rogné par le bas de la fenêtre, n'est plus lu. La face se
+   remplit **par le haut** (`flex-start`, la règle de plateau la remplit par le bas), le nom se pose **sous
+   les deux pastilles** (la faction à gauche, le Seuil à droite, 1,35 rem + 4 %) sur un voile sombre, au
+   plancher `--fs-xs` (D-164 (1)) : deux lignes de 11,2 px tiennent dans la bande de 56 px. Le genre de la
+   carte (« Entrant ») et la barre de Stress, qui n'a rien à mesurer en main, restent hors de la bande. */
 @media (max-width: 639px), (min-width: 900px) {
-  .battle .hand .card__voile {
-    background: linear-gradient(180deg, rgb(0 0 0 / 82%) 0%, rgb(0 0 0 / 55%) 70%, transparent 100%);
-    bottom: auto;
-    inset-inline: 0;
-    padding: 0.2rem 0.2rem 0.5rem 1.55rem;
-    top: 0;
+  .battle .hand .card--en-main .card__face {
+    justify-content: flex-start;
   }
 
-  .battle .hand .card__name {
+  .battle .hand .card--en-main .card__voile {
+    background: linear-gradient(180deg, rgb(0 0 0 / 82%) 0%, rgb(0 0 0 / 78%) 80%, rgb(0 0 0 / 40%) 100%);
+    padding: 1.7rem 0.2rem 0.15rem;
+    position: relative;
+  }
+
+  .battle .hand .card--en-main .card__stage {
+    display: none;
+  }
+
+  .battle .hand .card--en-main .card__name {
     font-size: var(--fs-xs);
     line-height: 1.1;
   }

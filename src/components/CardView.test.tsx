@@ -181,6 +181,38 @@ describe('CardView — le gabarit à cadre', () => {
     expect(presque.container.querySelector('.stress__fill')).toHaveClass('is-high');
   });
 
+  /**
+   * **Le nom de la carte de main est lu avant l'illustration** (#744) : la main au repos n'en montre que
+   * les 56 px du haut. `compareDocumentPosition` lit l'ordre des nœuds, pas une capture.
+   */
+  const avant = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+  it('en main (enMain), le nom précède l’illustration et la barre de Stress dans le DOM (#744)', () => {
+    const carte = planques[0];
+    const { container } = render(<CardView card={carte} calme plateau enMain stress={0} seuil={60} />);
+    const nom = container.querySelector('.card__name') as HTMLElement;
+    expect(nom).toHaveTextContent(carte.name);
+    expect(avant(nom, container.querySelector('.card__art')!)).toBe(true);
+    expect(avant(nom, container.querySelector('.card__seuil-bar')!)).toBe(true);
+    expect(container.querySelector('.card')).toHaveClass('card--en-main');
+  });
+
+  it('le contrôle mord : au plateau sans enMain, le nom reste sous l’illustration (#744)', () => {
+    const carte = planques[0];
+    const { container } = render(<CardView card={carte} calme plateau stress={0} seuil={60} />);
+    const nom = container.querySelector('.card__name') as HTMLElement;
+    // Le même test appliqué à ce rendu échoue : c'est ce qui prouve que l'ordre vient bien de `enMain`.
+    expect(avant(nom, container.querySelector('.card__art')!)).toBe(false);
+    expect(container.querySelector('.card')).not.toHaveClass('card--en-main');
+  });
+
+  it('hors plateau, enMain ne change rien : la Collection et la fiche gardent leur ordre (#744)', () => {
+    const carte = planques[0];
+    const sans = render(<CardView card={carte} compact />).container.innerHTML;
+    const avec = render(<CardView card={carte} compact enMain />).container.innerHTML;
+    expect(avec).toBe(sans);
+  });
+
   it('chargement : l’illustration repose sur l’aplat de faction, qui reste dessous (#131)', () => {
     const { container } = render(<CardView card={avecArt!} compact />);
     const art = container.querySelector('.card__art') as HTMLElement;
