@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { ParcoursProfil } from './ParcoursProfil';
 import { tirerIntitule } from '@/game/intitule';
 import { useProfil } from '@/store/profil';
-import type { Profil } from '@/lib/profil';
+import { ICONES_PROFIL, type Profil } from '@/lib/profil';
 
 /**
  * Le parcours de première connexion à l'écran (#325, D-148) : trois étapes dans l'ordre, un
@@ -31,17 +31,21 @@ function geste(champs: Partial<Profil>) {
   useProfil.setState({ profil: { ...actuel, ...champs } as Profil });
 }
 
-/** Un profil tel que les cas l'écrivent : l'icône et la Journée (0027, D-197) sont nulles sauf mention. */
+/** Un profil tel que les cas l'écrivent : la Journée (0027, D-197) est nulle et l'icône posée, sauf mention. */
 type ProfilPose = Omit<Profil, 'icone' | 'journee_faite_le'> & Partial<Pick<Profil, 'icone' | 'journee_faite_le'>>;
 
 function poserStore(profil: ProfilPose | null) {
   useProfil.setState({
-    profil: profil && { icone: null, journee_faite_le: null, ...profil },
+    profil: profil && { icone: 'comptable', journee_faite_le: null, ...profil },
     charge: true,
     chargement: false,
     erreur: null,
     creerPseudo: vi.fn(async (_uid: string, pseudo: string) => {
       geste({ pseudo });
+      return null;
+    }),
+    choisirIcone: vi.fn(async (_uid: string, icone: Profil['icone']) => {
+      geste({ icone });
       return null;
     }),
     choisirService: vi.fn(async (_uid: string, service: Profil['service']) => {
@@ -63,18 +67,23 @@ beforeEach(() => poserStore(null));
 afterEach(cleanup);
 
 describe('le parcours, à l’écran (#325, D-148)', () => {
-  it('commence par le pseudo, à l’étape 1 sur 3', () => {
+  it('commence par le pseudo, à l’étape 1 sur 4', () => {
     render(<ParcoursProfil uid={UID} />);
-    expect(screen.getByText('Étape 1 sur 3')).toBeInTheDocument();
+    expect(screen.getByText('Étape 1 sur 4')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Ton pseudo/ })).toBeInTheDocument();
   });
 
-  it('fait les trois étapes dans l’ordre, et tire l’intitulé du compte', async () => {
+  it('fait les quatre étapes dans l’ordre, et tire l’intitulé du compte', async () => {
     const { container } = render(<ParcoursProfil uid={UID} />);
 
     fireEvent.change(screen.getByLabelText(/Pseudo/), { target: { value: 'Anaïs' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
+    expect(await screen.findByRole('heading', { name: /Ton portrait/ })).toBeInTheDocument();
+    expect(screen.getByText('Étape 2 sur 4')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'Juriste' }));
+    fireEvent.click(screen.getByRole('button', { name: /Choisir ce portrait/ }));
     expect(await screen.findByRole('heading', { name: /Ton service/ })).toBeInTheDocument();
+    expect(useProfil.getState().profil?.icone).toBe('juriste');
     expect(container.querySelector('[data-etape]')).toHaveAttribute('data-etape', 'service');
 
     fireEvent.click(screen.getByRole('radio', { name: /^2ème/ }));
@@ -89,6 +98,45 @@ describe('le parcours, à l’écran (#325, D-148)', () => {
     // pas répété une seconde fois sous lui.
     expect(screen.getByTestId('apercu-profil')).toHaveTextContent('Anaïs / planqué du 2ème');
     expect(screen.queryByText(new RegExp(`— ${tire}`))).toBeNull();
+  });
+
+  it('propose les douze portraits, un seul est choisi, et rien ne se valide sans choix (D-197 (2))', async () => {
+    poserStore({ id: UID, pseudo: 'Anaïs', service: null, intitule: null, intitule_relances: 0, icone: null });
+    const { container } = render(<ParcoursProfil uid={UID} />);
+
+    const radios = screen.getAllByRole('radio');
+    expect(radios).toHaveLength(ICONES_PROFIL.length);
+    expect(ICONES_PROFIL).toHaveLength(12);
+    const images = [...container.querySelectorAll('img')];
+    expect(images.map((i) => i.getAttribute('src'))).toEqual(
+      ICONES_PROFIL.map((i) => `/design/profils/${i.slug}.webp`)
+    );
+    // Lisible à 48 px : chaque image est cadrée carrée et demandée à 96 px (le double, pour l'écran dense).
+    for (const image of images) expect(image).toHaveAttribute('width', '96');
+
+    // Le contrôle mord : sans portrait choisi, le bouton est inerte ; une seule radio reste cochée.
+    const valider = screen.getByRole('button', { name: /Choisir ce portrait/ });
+    expect(valider).toBeDisabled();
+    fireEvent.click(screen.getByRole('radio', { name: 'Archiviste' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Technicien' }));
+    expect(radios.filter((r) => (r as HTMLInputElement).checked)).toHaveLength(1);
+    expect(screen.getByRole('radio', { name: 'Technicien' })).toBeChecked();
+    expect(valider).toBeEnabled();
+    fireEvent.click(valider);
+    await waitFor(() => expect(useProfil.getState().profil?.icone).toBe('technicien'));
+  });
+
+  it('un compte d’avant 0027 (service et intitulé posés, pas d’icône) repasse par le portrait', () => {
+    poserStore({
+      id: UID,
+      pseudo: 'Anaïs',
+      service: '2e',
+      intitule: 'sculpteur de fumée',
+      intitule_relances: 0,
+      icone: null
+    });
+    render(<ParcoursProfil uid={UID} />);
+    expect(screen.getByRole('heading', { name: /Ton portrait/ })).toBeInTheDocument();
   });
 
   it('dit ce que le service engage — et qu’il ne change aucune règle (D-135)', async () => {
@@ -109,9 +157,9 @@ describe('le parcours, à l’écran (#325, D-148)', () => {
     fireEvent.change(screen.getByLabelText(/Pseudo/), { target: { value: 'Anaïs' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
 
-    const titre = await screen.findByRole('heading', { name: /Ton service/ });
+    const titre = await screen.findByRole('heading', { name: /Ton portrait/ });
     expect(document.activeElement).toBe(titre);
-    expect(container.querySelector('[data-etape]')).toHaveAttribute('data-etape', 'service');
+    expect(container.querySelector('[data-etape]')).toHaveAttribute('data-etape', 'icone');
     // Le contrôle mord : sans le `useEffect` de focus, l'actif reste `<body>`.
     expect(document.activeElement).not.toBe(document.body);
   });

@@ -18,11 +18,11 @@ export interface Profil {
   intitule: string | null;
   intitule_relances: number;
   /**
-   * L'icône de profil (D-197 (2), `0027_profil_icone_journee.sql`) : un slug court, `null` tant
-   * que le parcours ne l'a pas posée. La **liste** des icônes n'est pas encore décidée (à
-   * dessiner) : la base ne contraint que la forme, et ce module non plus.
+   * L'icône de profil (D-197 (2), colonne de `0027`, liste fermée de `0029`) : l'un des douze
+   * slugs d'`ICONES_PROFIL`, `null` tant que le parcours ne l'a pas posée. Une valeur hors liste
+   * (base d'avant `0029`, pas encore migrée) se lit comme `null` : le parcours la redemande.
    */
-  icone: string | null;
+  icone: SlugIcone | null;
   /**
    * Quand le compte a fait la Journée (D-197 (3)) ; `null` = pas faite. Posée **une fois**, datée
    * par le serveur, jamais défaite : rejouer la Journée depuis Réglages ne touche pas à ce fait.
@@ -31,14 +31,46 @@ export interface Profil {
 }
 
 /**
- * La forme d'une icône, telle que la base la tient (`profils_icone_check`) : minuscules,
- * chiffres, tirets simples, 1 à 40 caractères. Pas de liste fermée tant que les icônes ne sont
- * pas dessinées (D-197 (5)) : ce qui est accepté ici peut encore être refusé par la base plus
- * tard, jamais l'inverse.
+ * La forme d'une icône, telle que la base la tient : minuscules, chiffres, tirets simples,
+ * 1 à 40 caractères. Depuis `0029_profil_icone_liste.sql` la base tient **en plus** la liste
+ * fermée ci-dessous (#791, D-197 (2)) ; la forme reste ce que garde `design/profils/` (les noms
+ * de fichiers).
  */
 export const FORME_ICONE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-/** Vrai si l'icône a la forme que la base accepte : évite un aller-retour pour rien. */
+/**
+ * Les douze portraits de planqués (D-197 (2)), dans l'ordre où le parcours les montre. Le slug est
+ * le nom du fichier `public/design/profils/<slug>.webp` **et** la valeur de `profils.icone` ; le
+ * libellé dit le portrait, il n'a aucun effet en jeu (D-135). La liste est doublée dans la base
+ * (`0029_profil_icone_liste.sql`) : `src/lib/profil-icones.test.ts` et
+ * `supabase/profil-icone-liste.test.ts` gardent les deux ensemble.
+ */
+export const ICONES_PROFIL = [
+  { slug: 'agent-accueil', libelle: 'Agent d’accueil' },
+  { slug: 'controleuse', libelle: 'Contrôleuse' },
+  { slug: 'technicien', libelle: 'Technicien' },
+  { slug: 'comptable', libelle: 'Comptable' },
+  { slug: 'cheffe-projet', libelle: 'Cheffe de projet' },
+  { slug: 'developpeur', libelle: 'Développeur' },
+  { slug: 'gestionnaire-rh', libelle: 'Gestionnaire RH' },
+  { slug: 'chef-atelier', libelle: 'Chef d’atelier' },
+  { slug: 'charge-communication', libelle: 'Chargée de communication' },
+  { slug: 'archiviste', libelle: 'Archiviste' },
+  { slug: 'juriste', libelle: 'Juriste' },
+  { slug: 'logisticien', libelle: 'Logisticien' }
+] as const;
+
+export type SlugIcone = (typeof ICONES_PROFIL)[number]['slug'];
+
+/** Vrai si l'icône est l'une des douze : refusé d'avance ce que la base refuserait. */
+export function iconeDeLaListe(icone: unknown): icone is SlugIcone {
+  return typeof icone === 'string' && ICONES_PROFIL.some((i) => i.slug === icone);
+}
+
+/** Où se trouve l'image d'une icône. */
+export const urlIcone = (slug: SlugIcone): string => `/design/profils/${slug}.webp`;
+
+/** Vrai si l'icône a la forme que la base accepte (la liste, elle, est `iconeDeLaListe`). */
 export function iconeBienFormee(icone: string): boolean {
   return icone.length >= 1 && icone.length <= 40 && FORME_ICONE.test(icone);
 }
@@ -49,7 +81,7 @@ export function journeeFaite(profil: Profil | null): boolean {
 }
 
 /** Les étapes du parcours, dans l'ordre. `fait` : le profil est complet. */
-export type EtapeProfil = 'pseudo' | 'service' | 'intitule' | 'fait';
+export type EtapeProfil = 'pseudo' | 'icone' | 'service' | 'intitule' | 'fait';
 
 /** Le sous-ensemble du client dont ce module a besoin (structurel : éprouvable sans réseau). */
 export type ClientProfil = ClientComptes;
@@ -69,7 +101,7 @@ export function lireProfil(ligne: unknown): Profil | null {
     service,
     intitule: typeof ligne.intitule === 'string' ? ligne.intitule : null,
     intitule_relances: typeof ligne.intitule_relances === 'number' ? ligne.intitule_relances : 0,
-    icone: typeof ligne.icone === 'string' ? ligne.icone : null,
+    icone: iconeDeLaListe(ligne.icone) ? ligne.icone : null,
     journee_faite_le: typeof ligne.journee_faite_le === 'string' ? ligne.journee_faite_le : null
   };
 }
@@ -77,6 +109,7 @@ export function lireProfil(ligne: unknown): Profil | null {
 /** L'étape où en est le parcours. Un profil absent commence par le pseudo. */
 export function etapeDuProfil(profil: Profil | null): EtapeProfil {
   if (!profil) return 'pseudo';
+  if (profil.icone === null) return 'icone';
   if (profil.service === null) return 'service';
   if (profil.intitule === null) return 'intitule';
   return 'fait';
@@ -89,7 +122,7 @@ export function messageDeProfil(message: string): string {
   if (/profils_relance_figee/.test(message)) return 'Tu as déjà validé ton intitulé : plus de relance.';
   if (/profils_intitule_apres_service/.test(message)) return 'Choisis d’abord ton service.';
   if (/profils_journee_figee/.test(message)) return 'Ta Journée est faite : ce fait ne se défait pas.';
-  if (/profils_icone_check/.test(message)) return 'Cette icône n’a pas la forme attendue.';
+  if (/profils_icone_check/.test(message)) return 'Cette icône n’est pas dans la liste.';
   if (/profils_pseudo_check/.test(message)) {
     return 'Ton pseudo doit faire entre 1 et 24 caractères, sans blanc aux bords.';
   }
@@ -162,11 +195,11 @@ export async function relancerIntitule(
 }
 
 /**
- * L'icône de profil (D-197 (2)). Refusée d'avance si sa forme est mauvaise ; la base la refuse
+ * L'icône de profil (D-197 (2)). Refusée d'avance si elle n'est pas dans la liste ; la base la refuse
  * de toute façon (`profils_icone_check`). Elle se change librement, comme le pseudo.
  */
 export async function poserIcone(uid: string, icone: string, chargerClient = clientParDefaut): Promise<Profil | null> {
-  if (!iconeBienFormee(icone)) throw new Error(messageDeProfil('profils_icone_check'));
+  if (!iconeDeLaListe(icone)) throw new Error(messageDeProfil('profils_icone_check'));
   const c = await client(chargerClient);
   const { error } = await c.from('profils').update({ icone }).eq('id', uid);
   if (error) throw new Error(messageDeProfil(error.message));

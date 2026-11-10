@@ -72,7 +72,7 @@ const PROFIL_FAIT: Profil = {
   service: '2e',
   intitule: 'sculpteur de fumée',
   intitule_relances: 0,
-  icone: null,
+  icone: 'comptable',
   journee_faite_le: null
 };
 
@@ -499,7 +499,7 @@ describe('changement de compte : le profil du précédent est effacé (#528)', (
     service: '2e',
     intitule: 'sculpteur de fumée',
     intitule_relances: 0,
-    icone: null,
+    icone: 'comptable',
     journee_faite_le: null
   };
 

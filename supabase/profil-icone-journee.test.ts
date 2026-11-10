@@ -24,7 +24,7 @@
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { APPAREIL_A, APPAREIL_B, avecAppareil, base, creerCompte, migrations, type Base } from './pglite';
+import { APPAREIL_A, APPAREIL_B, avecAppareil, base, creerCompte, type Base } from './pglite';
 
 const MIGRATION = '0027_profil_icone_journee.sql';
 
@@ -51,7 +51,9 @@ function migrationsMutees(nom: string, ...mutations: Array<[avant: string, apres
     if (!source.includes(avant)) throw new Error(`${nom} ne contient pas « ${avant} » : la mutation ne mord pas`);
     source = source.replace(avant, apres);
   }
-  return NOMS.map((n) => (n === nom ? source : lire(n))).join('\n');
+  return NOMS.filter((n) => n <= MIGRATION)
+    .map((n) => (n === nom ? source : lire(n)))
+    .join('\n');
 }
 
 type Issue = { accepte: true; lignes: Array<Record<string, unknown>> } | { accepte: false; message: string };
@@ -96,7 +98,9 @@ async function ligneDe(db: Base, appareil: string) {
   return rows[0];
 }
 
-async function monde(sql?: string): Promise<Base> {
+// Ce test garde 0027 : la base s'arrête à elle. La liste fermée de 0029 a son propre test
+// (`profil-icone-liste.test.ts`), et elle refuserait les slugs de forme libre d'ici.
+async function monde(sql: string = jusqua(MIGRATION)): Promise<Base> {
   const db = await base(sql);
   await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
   await creerCompte(db, APPAREIL_B, { etat: 'approuve' });
@@ -269,7 +273,7 @@ describe('icône de profil et Journée faite (#781, D-197)', () => {
 
     it('la migration mutée sans son check laisse passer l icône fautive', async () => {
       const sans = migrationsMutees(MIGRATION, ["and icone ~ '^[a-z0-9]+(-[a-z0-9]+)*$'", '']);
-      expect(sans).not.toBe(migrations());
+      expect(sans).not.toBe(jusqua(MIGRATION));
       const db = await monde(sans);
       accepte(await creer(db, APPAREIL_A));
       accepte(await poserIcone(db, APPAREIL_A, APPAREIL_A, 'Chef De Cabinet'));

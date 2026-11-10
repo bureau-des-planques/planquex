@@ -1,5 +1,5 @@
 /**
- * Le parcours de première connexion (#325, D-148) : pseudo, puis service, puis intitulé tiré
+ * Le parcours de première connexion (#325, D-148) : pseudo, puis portrait (icône, D-197 (2)), puis service, puis intitulé tiré
  * au sort, relançable une fois.
  *
  * L'étape vient du profil lu dans la base (`etapeDuProfil`), pas d'un compteur local : un
@@ -14,27 +14,33 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { etapeDuProfil } from '@/lib/profil';
+import { ICONES_PROFIL, etapeDuProfil, urlIcone, type SlugIcone } from '@/lib/profil';
 import { SERVICES, fonctionProfil, tirerIntitule, type CodeService } from '@/game/intitule';
 import { useProfil } from '@/store/profil';
 
 /** Le titre de chaque étape : une étape, une phrase, et c'est le titre qui prend le focus. */
 const TITRES = {
   pseudo: 'Ton pseudo',
+  icone: 'Ton portrait',
   service: 'Ton service',
   intitule: 'Ton intitulé'
 } as const;
+
+/** Les étapes dans l'ordre (le numéro affiché en vient). */
+const ETAPES = ['pseudo', 'icone', 'service', 'intitule'] as const;
 
 export function ParcoursProfil({ uid }: { uid: string }) {
   const profil = useProfil((state) => state.profil);
   const chargement = useProfil((state) => state.chargement);
   const erreur = useProfil((state) => state.erreur);
   const creerPseudo = useProfil((state) => state.creerPseudo);
+  const choisirIcone = useProfil((state) => state.choisirIcone);
   const choisirService = useProfil((state) => state.choisirService);
   const relancer = useProfil((state) => state.relancer);
   const valider = useProfil((state) => state.valider);
 
   const [pseudo, setPseudo] = useState('');
+  const [icone, setIcone] = useState<SlugIcone | null>(null);
   const [service, setService] = useState<CodeService | null>(null);
   const etape = etapeDuProfil(profil);
 
@@ -55,6 +61,11 @@ export function ParcoursProfil({ uid }: { uid: string }) {
     await creerPseudo(uid, pseudo);
   };
 
+  const envoyerIcone = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (icone) await choisirIcone(uid, icone);
+  };
+
   const envoyerService = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (service) await choisirService(uid, service);
@@ -63,7 +74,7 @@ export function ParcoursProfil({ uid }: { uid: string }) {
   // Le parcours est fini : Connexion montre le badge, puis renvoie vers le bureau ou l'attente.
   if (etape === 'fait') return null;
 
-  const numero = etape === 'pseudo' ? 1 : etape === 'service' ? 2 : 3;
+  const numero = ETAPES.indexOf(etape) + 1;
   const intitule = profil ? tirerIntitule(uid, profil.intitule_relances) : '';
   // Le tirage est **déterministe** : on sait d'avance ce que la relance donnerait. Sur huit
   // intitulés, une relance sur huit environ rend le même titre — la montrer pour la consommer
@@ -80,7 +91,7 @@ export function ParcoursProfil({ uid }: { uid: string }) {
   return (
     <section className="section panel parcours" aria-labelledby="parcours-titre" data-etape={etape}>
       <div className="parcours__rail" aria-hidden="true">
-        {[1, 2, 3].map((pas) => (
+        {ETAPES.map((_, i) => i + 1).map((pas) => (
           <span key={pas} className={pas <= numero ? 'parcours__pas parcours__pas--fait' : 'parcours__pas'} />
         ))}
       </div>
@@ -89,7 +100,7 @@ export function ParcoursProfil({ uid }: { uid: string }) {
         {TITRES[etape]}
       </h2>
       <p className="parcours__etape m-0" role="status">
-        Étape {numero} sur 3
+        Étape {numero} sur {ETAPES.length}
       </p>
 
       {etape === 'pseudo' && (
@@ -111,6 +122,52 @@ export function ParcoursProfil({ uid }: { uid: string }) {
           <div className="actions actions--tight">
             <button type="submit" className="button button--primary" disabled={chargement || !pseudo.trim()}>
               {chargement ? 'Patiente…' : 'Continuer'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {etape === 'icone' && profil && (
+        <form className="flex flex-col gap-3" onSubmit={envoyerIcone}>
+          <fieldset className="m-0 border-0 p-0">
+            <legend className="field__label mb-2">Choisis ton portrait</legend>
+            <div className="grid grid-cols-4 gap-2">
+              {ICONES_PROFIL.map((option) => (
+                <label
+                  key={option.slug}
+                  className="relative block cursor-pointer rounded-sm outline-2 -outline-offset-2 outline-transparent has-[:checked]:outline-[var(--gold)] has-[:focus-visible]:outline-[var(--gold)]"
+                >
+                  <input
+                    type="radio"
+                    name="icone"
+                    value={option.slug}
+                    aria-label={option.libelle}
+                    className="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0"
+                    checked={icone === option.slug}
+                    onChange={() => setIcone(option.slug)}
+                  />
+                  <img
+                    src={urlIcone(option.slug)}
+                    alt=""
+                    width={96}
+                    height={96}
+                    loading="lazy"
+                    decoding="async"
+                    className="block aspect-square h-auto w-full"
+                  />
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <p className="parcours__aide m-0" role="status">
+            {icone
+              ? (ICONES_PROFIL.find((i) => i.slug === icone)?.libelle ?? '')
+              : 'Touche un portrait pour le choisir.'}{' '}
+            Il n’a aucun effet en jeu : il te donne seulement un visage.
+          </p>
+          <div className="actions actions--tight">
+            <button type="submit" className="button button--primary" disabled={chargement || !icone}>
+              {chargement ? 'Patiente…' : 'Choisir ce portrait'}
             </button>
           </div>
         </form>
