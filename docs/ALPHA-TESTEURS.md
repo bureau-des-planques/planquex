@@ -73,13 +73,14 @@ Tu commences avec une Collection déjà garnie : tu peux composer un Deck et te 
 
 ## ⚠️ Ta sauvegarde
 
-**Vider les données de ton navigateur efface ta Collection, ton Deck, ton pseudo et ta partie en
-cours.** Pareil si tu changes de navigateur ou d'appareil — ton compte, lui, te suit. Le détail
+**Vider les données de ton navigateur efface ton pseudo, tes réglages et ta partie en cours** ;
+ton Deck et ta Collection, eux, sont sur ton compte et te suivent sur un autre appareil. Le détail
 des gestes d'installation et de sauvegarde est sur `/installation`.
 
 Avant : **Réglages → « Créer ma sauvegarde »**. Le texte qui apparaît est copié ; colle-le dans
 une note ou un message à toi-même. Pour revenir : colle-le dans la même zone, puis
-**« Restaurer ce texte »**.
+**« Restaurer ce texte »**. La sauvegarde remet tes réglages et ton Deck, jamais ta Collection
+(seul le compte crédite des cartes, D-179).
 
 ## Le serveur des testeurs
 

@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 201 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 202 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -207,3 +207,4 @@
 | D-199 | 10/11/2026 | ⚠ Amendée par D-201 (10/11/2026) : un compte en attente… | D-201 |
 | D-200 | 10/11/2026 | Le combat sur écran de bureau suit la composition du… |  |
 | D-201 | 10/11/2026 | Un compte en attente d'approbation ne joue pas : il… |  |
+| D-202 | 11/11/2026 | Export et import après la synchro : une archive numérotée… |  |
