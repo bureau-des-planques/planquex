@@ -7,6 +7,7 @@ import {
   dureeEcriture,
   etapePourChemin,
   libelleSaut,
+  ligneAideGeste,
   pasEcriture,
   passeAuGeste,
   tapeAvance,
@@ -488,6 +489,7 @@ export function JourneeIntegration() {
    * voile — sur le plateau, la table ronde de D-193 reste entière, et la réplique tient sur une
    * ligne (`journee__ligne`, pas un bouton : rien à y faire, le pas-à-pas du combat guide).
    */
+  const aide = !gesteFait ? ligneAideGeste(courante) : null;
   const scene = (avecParole: boolean, uneLigne = false) => (
     <div className={`journee__scene${avecParole ? '' : ' journee__scene--discrete'}`}>
       <img className="journee__portrait" src={PORTRAIT_CHEF_CABINET} alt="" aria-hidden="true" />
@@ -497,34 +499,46 @@ export function JourneeIntegration() {
         </p>
       )}
       {avecParole && (
-        // **Un vrai bouton** (779, D-196) : Entrée et Espace le déclenchent, et son nom dit le
-        // tap. Le texte visible est `aria-hidden` : la région `aria-live` le lit une fois.
-        <button
-          type="button"
-          className="journee__parole"
-          data-complet={repliqueComplete || undefined}
-          aria-label={`Chef de cabinet : ${courante.direction}${indicationTap}`}
-          onClick={toucherLaReplique}
-        >
-          <span className="journee__direction" aria-hidden="true">
-            <strong>Chef de cabinet</strong>{' '}
-            <span
-              key={courante.direction}
-              className="journee__texte-anime"
-              // La durée suit les mots (60 ms par mot, 3 s au plus) et les pas suivent les
-              // caractères : `src/styles.css` lit ces deux variables (décision du 10/11/2026).
-              style={
-                {
-                  '--duree-ecriture': `${dureeEcriture(courante.direction)}ms`,
-                  '--pas-ecriture': pasEcriture(courante.direction)
-                } as CSSProperties
-              }
-              onAnimationEnd={() => setRepliqueLue(courante.direction)}
-            >
-              {courante.direction}
+        // **L'encadré** : le bouton de la réplique et, dessous, la ligne d'aide du geste. Le
+        // bouton garde le tap ; la ligne n'est pas dedans (un bouton n'a pas de région `status`).
+        <div className="journee__encadre">
+          {/* **Un vrai bouton** (779, D-196) : Entrée et Espace le déclenchent, et son nom dit le
+          tap. Le texte visible est `aria-hidden` : la région `aria-live` le lit une fois. */}
+          <button
+            type="button"
+            className="journee__parole"
+            data-complet={repliqueComplete || undefined}
+            aria-label={`Chef de cabinet : ${courante.direction}${indicationTap}`}
+            onClick={toucherLaReplique}
+          >
+            <span className="journee__direction" aria-hidden="true">
+              <strong>Chef de cabinet</strong>{' '}
+              <span
+                key={courante.direction}
+                className="journee__texte-anime"
+                // La durée suit les mots (60 ms par mot, 3 s au plus) et les pas suivent les
+                // caractères : `src/styles.css` lit ces deux variables (décision du 10/11/2026).
+                style={
+                  {
+                    '--duree-ecriture': `${dureeEcriture(courante.direction)}ms`,
+                    '--pas-ecriture': pasEcriture(courante.direction)
+                  } as CSSProperties
+                }
+                onAnimationEnd={() => setRepliqueLue(courante.direction)}
+              >
+                {courante.direction}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+          {aide !== null && (
+            // **Visible, une seule ligne** (D-198 (6), #788) : la forme la plus sobre — une ligne
+            // en petit, collée sous la réplique, dans le même cadre. `role="status"` : annoncée une
+            // fois, par elle-même (la région `data-journee-voix` ne lit que la réplique).
+            <p className="journee__aide" role="status">
+              {aide}
+            </p>
+          )}
+        </div>
       )}
       <span className="sr-only" data-journee-voix aria-live="polite" aria-atomic="true">
         {(avecParole || uneLigne) && `Chef de cabinet : ${courante.direction}`}
@@ -651,24 +665,14 @@ export function JourneeIntegration() {
         {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
           apparaît, mais il entend un texte qui change. Elle ne parle que des étapes qui
           **exigent** un geste : aux autres, « C'est fait » serait faux. */}
-        {courante.geste !== undefined &&
-          (gesteFait ? (
-            // **Fait : l'étape suivante s'annonce** (779, D-196). La ligne reste dans le DOM pour
-            // les lecteurs d'écran ; à l'écran, la Journée a déjà avancé.
-            <p className="sr-only" role="status">
-              C’est fait : l’étape suivante s’ouvre.
-            </p>
-          ) : (
-            // **Lue, pas affichée** (04/11/2026, décision de Bastien, option A) : la ligne reste
-            // dans le DOM pour les lecteurs d'écran (`role="status"`), et « Montrer le bouton »
-            // dit déjà le geste à l'œil. `sr-only` la retire de la mise en page, et le budget de
-            // texte ne la compte pas (D-181 (3)).
-            <p className="sr-only" role="status">
-              {courante.geste === 'combat'
-                ? 'Joue le combat guidé : l’étape suivante s’ouvrira à sa fin.'
-                : 'Fais le geste sur la page : l’étape suivante s’ouvrira ensuite.'}
-            </p>
-          ))}
+        {courante.geste !== undefined && gesteFait && (
+          // **Fait : l'étape suivante s'annonce** (779, D-196). La ligne reste dans le DOM pour
+          // les lecteurs d'écran ; à l'écran, la Journée a déjà avancé. La ligne d'aide d'avant le
+          // geste est **visible**, dans l'encadré de parole (D-198 (6), #788).
+          <p className="sr-only" role="status">
+            C’est fait : l’étape suivante s’ouvre.
+          </p>
+        )}
 
         {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
           Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
