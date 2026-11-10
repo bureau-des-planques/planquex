@@ -28,7 +28,7 @@ import { DECK_SIZE, deckCanAdd, deckLegal } from '@/game/deck';
 import { lireCollection } from '@/lib/collection';
 import { lireDeck } from '@/lib/deck';
 import type { RaisonDeck } from '@/lib/deck';
-import { migratePersisted, STORAGE_VERSION, useStore } from '@/store/useStore';
+import { CARD_ID_RENAMES, migratePersisted, STORAGE_VERSION, useStore } from '@/store/useStore';
 import type { AppState } from '@/store/useStore';
 
 /** Le nom du jeu dans le texte exporté : une sauvegarde d'un autre jeu est refusée net. */
@@ -115,7 +115,7 @@ export async function creerSauvegarde(): Promise<Exportation> {
 }
 
 /** Ce que l'import a fait du Deck. */
-export type SortDeck = 'restaure' | 'inchange' | 'refuse';
+export type SortDeck = 'restaure' | 'inchange' | 'refuse' | 'compte';
 
 export type ResultatRestauration =
   | {
@@ -180,7 +180,9 @@ export function lireSauvegarde(texte: string): { ok: true; lue: Lue } | { ok: fa
       ok: true,
       lue: {
         reglages: lireReglages(reglages, STORAGE_VERSION),
-        deck: migratePersisted({ deck: deck.cartes }, STORAGE_VERSION).deck ?? [],
+        // Les ids renommés depuis la sauvegarde se remappent ici : `migratePersisted` ne le fait que
+        // pour une version plus ancienne, et lui en donner une viderait le Deck (palier v10).
+        deck: deck.cartes.map((id: string) => CARD_ID_RENAMES[id] ?? id),
         cafeTypes: Array.isArray(deck.cafeTypes) ? deck.cafeTypes : []
       }
     };
@@ -250,9 +252,14 @@ export async function restaurerSauvegarde(texte: string): Promise<ResultatRestau
   if (refuse) return { ok: true, deck: 'refuse', ecartees, synchro: null };
 
   const avant = useStore.getState().deck;
-  const change = avant.length !== deck.length || avant.some((id, index) => id !== deck[index]);
+  const identique = (a: readonly string[], b: readonly string[]) =>
+    a.length === b.length && a.every((id, index) => id === b[index]);
   useStore.getState().setDeck(deck);
   useStore.getState().setCafeTypes(cafeTypes as never);
   const synchro = await useStore.getState().synchroniserDeck();
-  return { ok: true, deck: change ? 'restaure' : 'inchange', ecartees, synchro };
+  // Ce qui est dit se lit **après** la synchro : au premier passage, un compte qui avait déjà
+  // un Deck garde le sien (`importer_deck`, D-179 (1)) et remplace la copie locale.
+  const final = useStore.getState().deck;
+  const sort: SortDeck = !identique(final, deck) ? 'compte' : identique(avant, deck) ? 'inchange' : 'restaure';
+  return { ok: true, deck: sort, ecartees, synchro };
 }

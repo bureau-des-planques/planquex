@@ -110,6 +110,7 @@ export function Settings() {
     const morceaux = ['Réglages restaurés.'];
     if (resultat.deck === 'restaure') morceaux.push('Deck remis sur ton compte.');
     if (resultat.deck === 'inchange') morceaux.push('Ton Deck n’a pas changé.');
+    if (resultat.deck === 'compte') morceaux.push('Ton compte avait déjà un Deck : c’est lui qui est gardé.');
     if (resultat.deck === 'refuse') morceaux.push('Le Deck de la sauvegarde est illégal : ton Deck actuel est gardé.');
     if (resultat.ecartees > 0) {
       morceaux.push(`${resultat.ecartees} carte(s) écartée(s) : absentes de ta Collection ou hors règles.`);
@@ -400,7 +401,7 @@ export function Settings() {
       <Confirmation
         open={confirmeReset}
         titre="Réinitialiser la progression ?"
-        texte="Ta Collection, ton Deck, ton nom et ta partie en cours sont effacés de ce navigateur, sans retour possible. Crée d’abord ta sauvegarde si tu veux pouvoir revenir."
+        texte="Ton nom, tes réglages, ton Deck et ta partie en cours sont effacés de ce navigateur, sans retour possible. Ta Collection, elle, se relit depuis ton compte. Crée d’abord ta sauvegarde si tu veux pouvoir remettre tes réglages et ton Deck."
         confirmer="Tout effacer"
         onConfirm={() => {
           reset();

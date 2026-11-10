@@ -286,6 +286,45 @@ describe('Import : par les opérations du compte, la Collection jamais réécrit
   });
 });
 
+describe('Archive : ids renommés et compte qui garde son Deck', () => {
+  it('remappe un id renommé depuis la sauvegarde, sans vider le Deck', async () => {
+    const compte = nouveauCompte({ collection: { 'rh-charge-prevention': 1 } });
+    brancherCompte(compte);
+    const archive = JSON.stringify({
+      jeu: 'bureau-des-planques',
+      archive: 1,
+      deck: { source: 'compte', cartes: ['rh-responsable-qvt'], cafeTypes: [] },
+      collection: { source: 'compte', cartes: {} },
+      reglages: {}
+    });
+
+    expect(await restaurerSauvegarde(archive)).toMatchObject({ ok: true, deck: 'restaure', ecartees: 0 });
+    expect(useStore.getState().deck).toEqual(['rh-charge-prevention']);
+  });
+
+  it('un compte qui avait déjà un Deck le garde, et l’écran ne dit pas « remis »', async () => {
+    const compte = nouveauCompte({ deck: [B] });
+    brancherCompte(compte);
+    // Premier passage : `importer_deck` n'écrase pas le Deck du compte et rend le sien.
+    simulerDeck({
+      fetchImpl: vi.fn(async () => json({ importe: false, deck: lignesDeck([B]) }))
+    });
+    useStore.setState({ deckImporte: false, owned: { [A]: 1, [B]: 1 } });
+    const archive = JSON.stringify({
+      jeu: 'bureau-des-planques',
+      archive: 1,
+      deck: { source: 'compte', cartes: [A], cafeTypes: [] },
+      collection: { source: 'compte', cartes: {} },
+      reglages: {}
+    });
+
+    const resultat = await restaurerSauvegarde(archive);
+
+    expect(resultat).toMatchObject({ ok: true, deck: 'compte' });
+    expect(useStore.getState().deck).toEqual([B]);
+  });
+});
+
 describe('Cas fautifs : un texte refusé laisse l’état intact', () => {
   const fautifs: Array<[string, string]> = [
     ['illisible', 'pas du json'],
