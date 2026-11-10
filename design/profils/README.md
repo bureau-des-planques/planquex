@@ -43,7 +43,15 @@ Prompt = gabarit commun où `X` est remplacé par le sujet (modèle `nano2` pour
 | `chef-atelier` | `chef-atelier.webp` | Chef d'atelier, casque de chantier, gilet | nano2 | 2026-11-10 | a man with a beard in a hard hat and high-visibility vest, workshop foreman, friendly weary look |
 | `charge-communication` | `charge-communication.webp` | Chargée de communication, tablette | nano2 | 2026-11-10 | a young Latina woman, communications officer, with a stylus and tablet, curly hair |
 | `archiviste` | `archiviste.webp` | Archiviste, cardigan, dossiers | nano2 | 2026-11-10 | an older South Asian man, archivist, with a cardigan and a stack of folders, gentle patient expression |
-| `juriste` | `juriste.webp` | Juriste, blazer noir, tresses | nano2 | 2026-11-10 | a woman using a wheelchair-free office setting, legal advisor, black blazer, braided hair, confident calm look |
+| `juriste` | `juriste.webp` | Juriste, blazer noir, tresses, **assise dans un fauteuil roulant de bureau** (voir la note sous le tableau) | nano2 | 2026-11-10 | a woman using a wheelchair-free office setting, legal advisor, black blazer, braided hair, confident calm look |
 | `logisticien` | `logisticien.webp` | Logisticien, casquette, colis | nano2 | 2026-11-10 | a young man, mailroom and logistics clerk, with a cap, a parcel and a lanyard, cheerful sleepy expression |
 
 Premier essai rejeté par Flow (politique de contenu, prompt trop long et détaillé) : refait avec le gabarit court.
+
+## Notes de contrôle (10/11/2026)
+
+- **`juriste`** : le prompt consigné ci-dessus contient la formule fautive « wheelchair-free office setting » ; le modèle l'a lue
+  à l'envers et a rendu une femme **en fauteuil roulant**. Le portrait est respectueux et cohérent avec les onze autres ; il est
+  conservé tel quel, à valider par le propriétaire (sinon : régénérer sans cette formule).
+- Les douze images ont été **regardées** sur une planche-contact à 240, 96 et 48 px : cadrage carré, fond bleu nuit, visages
+  lisibles à 48 px, aucune caricature visible.
