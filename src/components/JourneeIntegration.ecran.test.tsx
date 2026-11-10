@@ -7,7 +7,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JourneeIntegration } from './JourneeIntegration';
-import { ETAPES_JOURNEE, LOCUTEUR_JOURNEE, MOTS_PAR_MINUTE, SECONDES_MAX_JOURNEE } from './journee-etapes';
+import {
+  DUREE_ECRITURE_MAX_MS,
+  ETAPES_JOURNEE,
+  LOCUTEUR_JOURNEE,
+  MOTS_PAR_MINUTE,
+  SECONDES_MAX_JOURNEE,
+  dureeEcriture,
+  pasEcriture
+} from './journee-etapes';
 import { MOTS_MAX_REPLIQUE, MOTS_MIN_REPLIQUE, PHRASES_MAX_REPLIQUE } from '@/data/repliques-direction';
 import { marquerGeste, oublierGestes } from './journee-gestes';
 import { CIBLE_DE_GESTE, cibleJournee } from './journee-cible';
@@ -884,10 +892,25 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
     unmount();
   });
 
-  it('termine l’écriture en moins de 1,5 s et révèle tout sous mouvement réduit', () => {
-    const duree = /\.journee__texte-anime\s*\{[^}]*animation:\s*journee-ecrit\s+([\d.]+)(ms|s)/.exec(STYLES_JOURNEE);
-    expect(duree).not.toBeNull();
-    expect(Number(duree?.[1]) * (duree?.[2] === 's' ? 1000 : 1)).toBeLessThanOrEqual(1500);
+  it('écrit 60 ms par mot, 3 s au plus, par une variable posée en ligne ; la feuille n’a plus de durée fixe', () => {
+    // La feuille lit `--duree-ecriture` et `--pas-ecriture` ; **le contrôle mord** : une durée
+    // écrite en dur après `journee-ecrit` (les 800 ms d'avant) fait échouer la première ligne.
+    const regle =
+      /\.journee__texte-anime\s*\{[^}]*animation:\s*journee-ecrit\s+([^;]+);/.exec(STYLES_JOURNEE)?.[1] ?? '';
+    expect(regle).not.toMatch(/^[\d.]+(ms|s)/);
+    expect(regle).toMatch(/var\(--duree-ecriture/);
+    expect(regle).toMatch(/steps\(var\(--pas-ecriture/);
+    for (const index of [0, 1, 3, 4]) {
+      const { unmount } = monterPanneau(index);
+      const direction = ETAPES_JOURNEE[index].direction;
+      const anime = document.querySelector<HTMLElement>('.journee__texte-anime');
+      const duree = anime?.style.getPropertyValue('--duree-ecriture') ?? '';
+      expect(duree, ETAPES_JOURNEE[index].titre).toBe(`${dureeEcriture(direction)}ms`);
+      expect(Number.parseInt(duree, 10)).toBeLessThanOrEqual(DUREE_ECRITURE_MAX_MS);
+      expect(Number.parseInt(duree, 10)).toBeGreaterThanOrEqual(MOTS_MIN_REPLIQUE * 60);
+      expect(anime?.style.getPropertyValue('--pas-ecriture')).toBe(String(pasEcriture(direction)));
+      unmount();
+    }
     expect(STYLES_JOURNEE).toMatch(
       /:root\[data-mouvement-reduit='true'\]\s+\.journee__texte-anime,[\s\S]*?clip-path:\s*none;/
     );

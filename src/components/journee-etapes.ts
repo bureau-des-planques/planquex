@@ -260,6 +260,26 @@ export function secondesDeLaJournee(
   return (mots / motsParMinute) * 60;
 }
 
+/**
+ * **L'écriture de la réplique** (décision du propriétaire du 10/11/2026, D-187 (4)) : la durée
+ * de l'effet machine à écrire suit le nombre de mots — **60 ms par mot**, plafonnée à **3 s** —
+ * au lieu des 800 ms fixes qui faisaient apparaître 35 mots aussi vite que 3. Un tap termine
+ * toujours l'écriture (D-196), et le mouvement réduit affiche le texte entier d'emblée.
+ */
+export const MS_PAR_MOT = 60;
+export const DUREE_ECRITURE_MAX_MS = 3000;
+
+/** La durée d'écriture d'un texte, en millisecondes : `MS_PAR_MOT` par mot, `DUREE_ECRITURE_MAX_MS` au plus. */
+export function dureeEcriture(texte: string): number {
+  const mots = texte.split(/\s+/).filter(Boolean).length;
+  return Math.min(DUREE_ECRITURE_MAX_MS, mots * MS_PAR_MOT);
+}
+
+/** Les pas de l'écriture (`steps()` de la feuille) : un par caractère, un au moins. */
+export function pasEcriture(texte: string): number {
+  return Math.max(1, texte.length);
+}
+
 /** Les phrases d'un texte : un point, un point d'interrogation ou un point d'exclamation. */
 export function nombreDePhrases(texte: string): number {
   return texte

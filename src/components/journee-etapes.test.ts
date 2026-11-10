@@ -3,15 +3,19 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CARTES_MONTREES,
+  DUREE_ECRITURE_MAX_MS,
   ETAPES_JOURNEE,
   LOCUTEUR_JOURNEE,
+  MS_PAR_MOT,
   MOTS_PAR_MINUTE,
   SECONDES_MAX_JOURNEE,
+  dureeEcriture,
   etapePourChemin,
   indexEtapeGeste,
   libelleSaut,
   motsDeLaReplique,
   nombreDePhrases,
+  pasEcriture,
   passeAuGeste,
   secondesDeLaJournee,
   secondesDeLecture,
@@ -291,6 +295,43 @@ describe('la Direction accueille le nouveau (31/10/2026 ; D-195 (2) depuis le 10
     expect(motsDeLaReplique(douze)).toBeLessThan(MOTS_MIN_REPLIQUE);
     const soixante = { ...ETAPES_JOURNEE[0], direction: `${Array.from({ length: 60 }, () => 'mot').join(' ')}.` };
     expect(motsDeLaReplique(soixante)).toBeGreaterThan(MOTS_MAX_REPLIQUE);
+  });
+});
+
+describe('l’écriture de la réplique suit les mots : 60 ms par mot, 3 s au plus (10/11/2026)', () => {
+  const texte = (n: number) => `${Array.from({ length: n }, () => 'mot').join(' ')}.`;
+
+  it('fixe 60 ms par mot et un plafond de 3 s', () => {
+    expect(MS_PAR_MOT).toBe(60);
+    expect(DUREE_ECRITURE_MAX_MS).toBe(3000);
+  });
+
+  it('dure 60 ms par mot : 12 mots font 720 ms, 25 font 1,5 s, 35 font 2,1 s', () => {
+    expect(dureeEcriture(texte(12))).toBe(720);
+    expect(dureeEcriture(texte(25))).toBe(1500);
+    expect(dureeEcriture(texte(35))).toBe(2100);
+    // **Le contrôle mord** : une durée fixe (800 ms, l'ancienne feuille) donnerait la même valeur
+    // à 12 et à 35 mots ; ici elles diffèrent, et aucune ne vaut 800.
+    expect(dureeEcriture(texte(12))).not.toBe(dureeEcriture(texte(35)));
+    expect([dureeEcriture(texte(12)), dureeEcriture(texte(35))]).not.toContain(800);
+  });
+
+  it('plafonne à 3 s : 60 mots comme 100 mots', () => {
+    expect(dureeEcriture(texte(50))).toBe(3000);
+    expect(dureeEcriture(texte(60))).toBe(3000);
+    expect(dureeEcriture(texte(100))).toBe(3000);
+    for (const etape of ETAPES_JOURNEE) {
+      expect(dureeEcriture(etape.direction), etape.titre).toBeLessThanOrEqual(DUREE_ECRITURE_MAX_MS);
+      expect(dureeEcriture(etape.direction), etape.titre).toBe(motsDeLaReplique(etape) * MS_PAR_MOT);
+    }
+  });
+
+  it('écrit caractère par caractère : un pas par caractère, un au moins', () => {
+    expect(pasEcriture('Bonjour.')).toBe(8);
+    expect(pasEcriture('')).toBe(1);
+    for (const etape of ETAPES_JOURNEE) {
+      expect(pasEcriture(etape.direction), etape.titre).toBe(etape.direction.length);
+    }
   });
 });
 
