@@ -22,7 +22,11 @@
  * « réplique » (D-181 (8)(b)) : « bulle » appartient au comité.
  *
  * **Les textes** sont la variante 1 de chaque ligne, choisie par le propriétaire le 10/11/2026
- * parmi les trois variantes classées de l'agent `redacteur` (#782).
+ * parmi les trois variantes classées de l'agent `redacteur` (#782), avec quatre corrections du
+ * même jour : les groupes `victoire` et `defaite` sont **permutés** (le brouillon lisait
+ * `victoire` du côté de la Direction, le code la lit du côté du testeur), la ligne « Bravo » est
+ * réécrite en défaite, et les répliques de l'Arrivage, du Deck et du comité sont réécrites en
+ * **annonce** : la réplique s'affiche **avant** le geste, elle ne peut pas le raconter au passé.
  */
 
 /** Une réplique fait **au moins** 25 mots (D-195 (2)) : en dessous, c'est une étiquette. */
@@ -38,7 +42,8 @@ export type EvenementDirection = 'ouverture' | 'pression' | 'craquage' | 'victoi
 /**
  * Les répliques de combat, par événement. **Deux au moins par événement** : la même phrase à
  * chaque fois ferait un perroquet, pas un adversaire. `victoire` et `defaite` se lisent du
- * côté du **testeur** (`src/pages/Battle.tsx` : `state.winner === myCamp` → `victoire`).
+ * côté du **testeur** (`src/pages/Battle.tsx` : `state.winner === myCamp` → `victoire`) : une
+ * `victoire` dit « tu as gagné », une `defaite` « tu as perdu », et le test le garde.
  */
 export const REPLIQUES_DIRECTION: Record<EvenementDirection, readonly string[]> = {
   ouverture: [
@@ -59,16 +64,16 @@ export const REPLIQUES_DIRECTION: Record<EvenementDirection, readonly string[]> 
     'Un bras cassé de moins, et la pause du midi est enfin libre pour tout le monde. Tu as réduit l’effectif, la Direction appelle ça une optimisation. Le planning te remercie.'
   ],
   victoire: [
-    'Je déléguerai ce point à personne, comme d’habitude, et vous le lirez dans le compte rendu de la semaine prochaine. Tu as perdu, mais la réunion a bien avancé, sans toi.',
-    'Le sujet est clos, mais le dossier reste ouvert, avec ton nom dedans, pour la forme. Tu as perdu une partie, la Direction garde l’archive et le droit de la relire.',
-    'On fera un retour d’expérience, un REX, et tu n’y es pas convié. Tu as perdu, c’est la meilleure base de travail. Nous garderons ta partie pour les prochaines formations.',
-    'Bravo pour cette victoire, qui ne figurera pas dans ton bilan, puisque la Direction rédige le bilan. Tu as joué avec sincérité. Nous en prendrons acte, mais pas au tableau.'
-  ],
-  defaite: [
     'Je te mets en copie, pour information seulement, ce qui veut dire que tu ne décides de rien. Tu as gagné le combat, félicitations, mais le mail part quand même à la Direction.',
     'La porte reste ouverte, celle de sortie, et tu l’as trouvée sans chercher. Tu as gagné, c’est une belle façon de partir, avec un badge encore actif pendant trois jours.',
     'Je transmets ta partie à ton manager, qui appréciera le contexte, c’est-à-dire tout ce que tu viens de faire. Tu as gagné, c’est exact, mais il faudra le lui expliquer en réunion.',
-    'Ce n’était pas un test, c’était un entretien, et tu viens de le réussir, ce qui inquiète un peu. Tu as gagné la partie, c’est remarquable, mais l’évaluation reste confidentielle, comme toujours.'
+    'Ce n’était pas un test, c’était un entretien, et tu viens de le réussir, ce qui inquiète un peu. Tu as gagné la partie, c’est remarquable, mais l’évaluation reste confidentielle, comme toujours.',
+  ],
+  defaite: [
+    'Je déléguerai ce point à personne, comme d’habitude, et vous le lirez dans le compte rendu de la semaine prochaine. Tu as perdu, mais la réunion a bien avancé, sans toi.',
+    'Le sujet est clos, mais le dossier reste ouvert, avec ton nom dedans, pour la forme. Tu as perdu une partie, la Direction garde l’archive et le droit de la relire.',
+    'On fera un retour d’expérience, un REX, et tu n’y es pas convié. Tu as perdu, c’est la meilleure base de travail. Nous garderons ta partie pour les prochaines formations.',
+    'Bravo pour l’effort, qui ne figurera pas dans ton bilan, puisque la Direction rédige le bilan. Tu as perdu avec sincérité. Nous en prendrons acte, mais pas au tableau.'
   ]
 };
 
@@ -80,14 +85,14 @@ export const REPLIQUES_DIRECTION: Record<EvenementDirection, readonly string[]> 
  */
 export const REPLIQUES_JOURNEE = {
   arrivage:
-    'Tu viens d’ouvrir ton premier paquet, et tu fais déjà la grimace. Bienvenue : la surprise est planifiée depuis trois trimestres, et tu n’y figures pas.',
+    'Ouvre ton premier Arrivage : cinq cartes, choisies pour toi par personne. La Direction appelle ça une surprise, le service achats appelle ça un reliquat. Tu feras la grimace, c’est prévu dans le planning.',
   collectionDeck:
-    'Tu as chargé vingt cartes et tu les trouves déjà trop nombreuses. C’est normal : la Direction les a recomptées trois fois, et elle ne trouve toujours pas le budget.',
+    'Charge un Deck proposé, vingt cartes, déjà comptées par la Direction. Tu les trouveras trop nombreuses, c’est normal. Un Deck, c’est un organigramme : tout le monde y figure, personne ne sait vraiment pourquoi.',
   combat:
     'Le combat guidé te tient la main, c’est rassurant. Trois Interventions suffisent pour gagner, mais la Direction a déjà rédigé le compte rendu de ta défaite.',
   donnees:
     'Tu joues depuis dix minutes sans rien sauvegarder, comme une réunion sans compte rendu. Crée ta sauvegarde maintenant : si le navigateur vide sa mémoire, la Direction n’aura rien à archiver.',
   /** La dernière étape : c'est elle qui porte la **phrase de fin** de la Journée (D-195 (5)). */
   comite:
-    'Tu as collé ton post-it, c’est ta première contribution au débat. Le mur ne lit rien, mais il archive tout, et c’est exactement ce que la Direction attend de toi.'
+    'Colle un post-it, IP pour une idée, OUF pour un défaut : ce sera ta première contribution au débat. Le mur ne lit rien, mais il archive tout. La Journée est finie, le travail commence.'
 } as const;

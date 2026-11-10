@@ -47,6 +47,27 @@ function refusDeReplique(texte: string): string[] {
   return refus;
 }
 
+/**
+ * **Le vocabulaire hors jeu** des répliques (`docs/JEU.md` §3.1, décision du propriétaire du
+ * 10/11/2026) : des mots français courants, donc absents de `FORBIDDEN_ANY_CASE`, mais que le
+ * jeu remplace par les siens — « paquet » est un **Arrivage**. Cherchés sans tenir compte de la casse.
+ */
+const VOCABULAIRE_HORS_JEU: readonly { mot: string; remplacement: string }[] = [{ mot: 'paquet', remplacement: 'Arrivage' }];
+
+/** Le premier mot hors jeu trouvé dans `texte`, ou `undefined`. */
+function motHorsJeu(texte: string): string | undefined {
+  const bas = texte.toLowerCase();
+  return VOCABULAIRE_HORS_JEU.find(({ mot }) => new RegExp(`\\b${mot}s?\\b`).test(bas))?.mot;
+}
+
+/**
+ * **Le camp de la fin** (décision du propriétaire du 10/11/2026) : `victoire` et `defaite` se
+ * lisent du côté du testeur (`src/pages/Battle.tsx` : `state.winner === myCamp` → `victoire`).
+ * Une `victoire` ne parle donc jamais de perte, une `defaite` jamais de gain.
+ */
+const FORMULE_DE_PERTE = /perdu|perdre|perds|défaite/i;
+const FORMULE_DE_GAIN = /gagné|gagner|gagnes|victoire|félicitations/i;
+
 /** Toutes les répliques du jeu : la Journée (cinq) et le combat (dix-neuf). */
 const REPLIQUES_BORNEES: readonly string[] = [
   ...Object.values(REPLIQUES_JOURNEE),
@@ -117,6 +138,38 @@ describe('les répliques du jeu passent le budget (D-195 (2), #782)', () => {
     for (const replique of REPLIQUES_BORNEES) {
       expect(refusDeReplique(replique), replique).toEqual([]);
     }
+  });
+
+  it('n’emploie aucun mot hors jeu : « paquet » se dit « Arrivage » (docs/JEU.md §3.1)', () => {
+    for (const replique of REPLIQUES_BORNEES) {
+      expect(motHorsJeu(replique), replique).toBeUndefined();
+    }
+    // **Le contrôle mord** : un texte de bonne longueur qui dit « paquet » est refusé, et le
+    // remplacement attendu est nommé.
+    const fautif = `${phrase(24)} paquet.`;
+    expect(refusDeReplique(fautif)).toEqual([]);
+    expect(motHorsJeu(fautif)).toBe('paquet');
+    expect(motHorsJeu('Deux paquets.')).toBe('paquet');
+    expect(VOCABULAIRE_HORS_JEU.find(({ mot }) => mot === 'paquet')?.remplacement).toBe('Arrivage');
+    // « empaqueté » n'est pas « paquet » : la borne de mot tient.
+    expect(motHorsJeu('Un dossier empaqueté.')).toBeUndefined();
+  });
+
+  it('une victoire dit « tu as gagné », une défaite « tu as perdu » : jamais l’inverse', () => {
+    for (const replique of REPLIQUES_DIRECTION.victoire) {
+      expect(replique, `victoire : « ${replique} »`).not.toMatch(FORMULE_DE_PERTE);
+    }
+    for (const replique of REPLIQUES_DIRECTION.defaite) {
+      expect(replique, `defaite : « ${replique} »`).not.toMatch(FORMULE_DE_GAIN);
+    }
+    // Chaque groupe le dit au moins une fois : un groupe muet sur l'issue ne prouverait rien.
+    expect(REPLIQUES_DIRECTION.victoire.some((replique) => FORMULE_DE_GAIN.test(replique))).toBe(true);
+    expect(REPLIQUES_DIRECTION.defaite.some((replique) => FORMULE_DE_PERTE.test(replique))).toBe(true);
+    // **Le contrôle mord** : le brouillon du 10/11/2026 lisait les groupes à l'envers ; ses lignes
+    // sont refusées dans le groupe où elles étaient.
+    expect('Tu as perdu, mais la réunion a bien avancé, sans toi.').toMatch(FORMULE_DE_PERTE);
+    expect('Tu as gagné le combat, félicitations.').toMatch(FORMULE_DE_GAIN);
+    expect('Bravo pour cette victoire, qui ne figurera pas dans ton bilan.').toMatch(FORMULE_DE_GAIN);
   });
 
   it('ne s’en prend jamais à la personne : aucune insulte, aucune vulgarité', () => {

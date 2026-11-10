@@ -773,7 +773,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('un tap affiche toute la réplique, et ne fait pas avancer une étape avec geste (D-187 (4), D-196)', async () => {
     const { unmount } = monterPanneau(0);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu viens d’ouvrir ton premier paquet/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Ouvre ton premier Arrivage/ });
     expect(encadre.querySelector('.journee__texte-anime')).toHaveTextContent(ETAPES_JOURNEE[0].direction);
     expect(encadre).not.toHaveAttribute('data-complet');
     await userEvent.click(encadre);
@@ -786,7 +786,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('la réplique est un vrai bouton : Entrée et Espace l’affichent, et son nom dit l’action', async () => {
     const { unmount } = monterPanneau(1);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu as chargé vingt cartes.*tout le texte/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Charge un Deck proposé.*tout le texte/ });
     act(() => encadre.focus());
     await userEvent.keyboard('{Enter}');
     expect(encadre).toHaveAttribute('data-complet', 'true');
@@ -803,7 +803,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
   it('sous mouvement réduit, la réplique est entière d’emblée : le nom ne demande plus de tap d’affichage', () => {
     const { unmount } = monterPanneau(0);
     act(() => useStore.setState({ reducedMotion: true }));
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu viens d’ouvrir ton premier paquet/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Ouvre ton premier Arrivage/ });
     // **Le contrôle mord** : sous mouvement réduit, la phrase « tout le texte » ne se lit plus.
     expect(encadre).toHaveAttribute('data-complet', 'true');
     expect(encadre.getAttribute('aria-label')).not.toMatch(/tout le texte/);
@@ -849,7 +849,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('le premier tap du comité finit l’écriture ; le second termine la Journée (10/11/2026)', async () => {
     const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu as collé ton post-it/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Colle un post-it/ });
     await userEvent.click(encadre);
     // **Le contrôle mord** : un premier tap qui terminerait ferait passer ce test.
     expect(encadre).toHaveAttribute('data-complet', 'true');
@@ -865,7 +865,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
     const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
     act(() => useStore.setState({ reducedMotion: true }));
     const encadre = screen.getByRole('button', {
-      name: /Chef de cabinet : Tu as collé ton post-it.*terminer la Journée/
+      name: /Chef de cabinet : Colle un post-it.*terminer la Journée/
     });
     await userEvent.click(encadre);
     expect(useStore.getState().tutorielVu).toBe(true);
@@ -875,7 +875,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('un tap sur une étape avec geste ne termine jamais la Journée', async () => {
     const { unmount } = monterPanneau(1);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu as chargé vingt cartes/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Charge un Deck proposé/ });
     await userEvent.click(encadre);
     await userEvent.click(encadre);
     // **Le contrôle mord** : un tap qui terminerait sur une étape avec geste écrirait `tutorielVu`.
