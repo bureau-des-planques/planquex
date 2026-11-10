@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 193 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 194 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -165,9 +165,9 @@
 | D-157 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la carte… | D-182 |
 | D-158 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 2) : la console… | D-182 |
 | D-159 | 30/10/2026 | Les services du parcours sont ceux d'un immeuble, et l'entrée… |  |
-| D-160 | 30/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la voix du panneau… | D-162, D-163 |
+| D-160 | 30/10/2026 | ⚠ Amendée par D-194 (10/11/2026, point 1) : le «… | D-162, D-163, D-194 |
 | D-161 | 30/10/2026 | Le mur du comité n'est plus exclu de la Journée… | D-162 |
-| D-162 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : elle reste une région,… | D-163 |
+| D-162 | 31/10/2026 | ⚠ Amendée par D-194 (10/11/2026, point 1) : le «… | D-163, D-194 |
 | D-163 | 31/10/2026 | ⚠ Amendée par D-181 (04/11/2026) : (3) « Suivant »… | D-181 |
 | D-164 | 31/10/2026 | Les libellés d'une vignette de carte se lisent . Une… |  |
 | D-165 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le pas-à-pas du combat… |  |
@@ -192,10 +192,11 @@
 | D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |  |
 | D-185 | 04/11/2026 | ⚠ Précisée par D-186 (04/11/2026, point (1)) : le nom… |  |
 | D-186 | 04/11/2026 | Le nom du locuteur de la Journée est hors du… |  |
-| D-187 | 04/11/2026 | La réplique de la Direction sort du panneau : la… |  |
+| D-187 | 04/11/2026 | ⚠ Précisée par D-194 (10/11/2026, point 2) : la tête… |  |
 | D-188 | 07/11/2026 | Les trois audits datés d'octobre quittent docs/ pour docs/archives/ .… |  |
 | D-189 | 07/11/2026 | Un PNG de docs/preuves/ tient sous 1 Mo ; l'historique… |  |
 | D-190 | 09/11/2026 | La marque du jeu devient le sceau à la tasse… |  |
 | D-191 | 09/11/2026 | ⚠ Amendée par D-193 (09/11/2026, point 1) : le combat… | D-193 |
 | D-192 | 09/11/2026 | Un cinquième onglet, la Pause café, devient l'espace social ;… |  |
 | D-193 | 09/11/2026 | Le combat suit la direction de D-191 ; son plateau… |  |
+| D-194 | 10/11/2026 | Pendant la Journée d'intégration, un fond flou, voilé ou inerte… |  |
