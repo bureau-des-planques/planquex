@@ -24,14 +24,19 @@ function geste(champs: Partial<Profil>) {
     pseudo: 'Anaïs',
     service: null,
     intitule: null,
-    intitule_relances: 0
+    intitule_relances: 0,
+    icone: null,
+    journee_faite_le: null
   };
   useProfil.setState({ profil: { ...actuel, ...champs } as Profil });
 }
 
-function poserStore(profil: Profil | null) {
+/** Un profil tel que les cas l'écrivent : l'icône et la Journée (0027, D-197) sont nulles sauf mention. */
+type ProfilPose = Omit<Profil, 'icone' | 'journee_faite_le'> & Partial<Pick<Profil, 'icone' | 'journee_faite_le'>>;
+
+function poserStore(profil: ProfilPose | null) {
   useProfil.setState({
-    profil,
+    profil: profil && { icone: null, journee_faite_le: null, ...profil },
     charge: true,
     chargement: false,
     erreur: null,

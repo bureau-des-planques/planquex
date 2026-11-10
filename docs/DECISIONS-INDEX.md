@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 197 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 200 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -161,7 +161,7 @@
 | D-153 | 29/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… | D-178, D-179 |
 | D-154 | 29/10/2026 | Le rangement de scripts/ vit en cinq dossiers, et un… |  |
 | D-155 | 29/10/2026 | La page /installation est hors du jeu, et le garde-fou… |  |
-| D-156 | 30/10/2026 | L'entrée du jeu exige un compte, le mur compris ;… |  |
+| D-156 | 30/10/2026 | ⚠ Amendée par D-199 (10/11/2026) : le point (3), «… | D-199 |
 | D-157 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la carte… | D-182 |
 | D-158 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 2) : la console… | D-182 |
 | D-159 | 30/10/2026 | Les services du parcours sont ceux d'un immeuble, et l'entrée… |  |
@@ -184,22 +184,25 @@
 | D-176 | 02/11/2026 | PRODUCT.md entre au dépôt comme contexte dérivé pour impeccable, pas… |  |
 | D-177 | 02/11/2026 | La frontière du dépôt : le jeu ici, l’exploitation dans… |  |
 | D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |  |
-| D-179 | 03/11/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
+| D-179 | 03/11/2026 | ⚠ Précisée par D-199 (10/11/2026) : l'Arrivage serveur (ouvrir-arrivage) n'est… |  |
 | D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |  |
-| D-181 | 04/11/2026 | ⚠ Amendée par D-195 (10/11/2026, point 2) : la réplique… | D-185, D-186, D-187, D-195, D-197 |
+| D-181 | 04/11/2026 | ⚠ Amendée par D-198 (10/11/2026, point 2) : le budget… | D-185, D-186, D-187, D-195, D-197, D-198 |
 | D-182 | 04/11/2026 | ⚠ Amendée par D-193 (09/11/2026, points 3 et 4) :… | D-193 |
 | D-183 | 04/11/2026 | Les traces de combat quittent le jeu : le client… |  |
 | D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |  |
 | D-185 | 04/11/2026 | ⚠ Précisée par D-186 (04/11/2026, point (1)) : le nom… |  |
-| D-186 | 04/11/2026 | Le nom du locuteur de la Journée est hors du… |  |
-| D-187 | 04/11/2026 | ⚠ Amendée par D-195 (10/11/2026, point 1) : la tête… | D-195 |
+| D-186 | 04/11/2026 | ⚠ Précisée par D-198 (10/11/2026, point 1) : la borne… |  |
+| D-187 | 04/11/2026 | ⚠ Amendée par D-198 (10/11/2026, point 4) : l'écriture de… | D-195, D-198 |
 | D-188 | 07/11/2026 | Les trois audits datés d'octobre quittent docs/ pour docs/archives/ .… |  |
 | D-189 | 07/11/2026 | Un PNG de docs/preuves/ tient sous 1 Mo ; l'historique… |  |
 | D-190 | 09/11/2026 | La marque du jeu devient le sceau à la tasse… |  |
 | D-191 | 09/11/2026 | ⚠ Amendée par D-193 (09/11/2026, point 1) : le combat… | D-193 |
 | D-192 | 09/11/2026 | Un cinquième onglet, la Pause café, devient l'espace social ;… |  |
-| D-193 | 09/11/2026 | Le combat suit la direction de D-191 ; son plateau… |  |
+| D-193 | 09/11/2026 | ⚠ Amendée par D-200 (10/11/2026) : le point (5), «… | D-200 |
 | D-194 | 10/11/2026 | Pendant la Journée d'intégration, un fond flou, voilé ou inerte… |  |
-| D-195 | 10/11/2026 | Le Chef de cabinet de la Journée : tête d'environ… |  |
+| D-195 | 10/11/2026 | ⚠ Précisée par D-198 (10/11/2026, points 1, 2 et 6)… |  |
 | D-196 | 10/11/2026 | La Journée n'a plus de bouton « Suivant » :… |  |
-| D-197 | 10/11/2026 | Le parcours de départ avec le Chef de cabinet :… |  |
+| D-197 | 10/11/2026 | ⚠ Point (5) tranché par D-199 (10/11/2026) : le compte… |  |
+| D-198 | 10/11/2026 | La Journée : budget, nom du locuteur, issue du combat,… |  |
+| D-199 | 10/11/2026 | Le compte en attente d'approbation fait la Journée et le… |  |
+| D-200 | 10/11/2026 | Le combat sur écran de bureau suit la composition du… |  |

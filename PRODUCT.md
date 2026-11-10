@@ -70,7 +70,8 @@ jeu, pas d'une explication.
   (D-120) ; le client n'en porte qu'un lien, jamais un widget.
 - **La porte de l'alpha en ligne exige un compte** (D-156) : une session anonyme repart vers
   `/connexion` ; un compte `refuse` ne joue pas et repart vers `/attente` ; un compte en attente
-  peut jouer.
+  fait la Journée et le combat solo, sans Arrivage serveur, sans mur du comité ni Pause café
+  (D-199).
 - **Le mode local fonctionne sans configuration.** Sans `.env`, la garde de compte laisse passer et
   le mur lit `docs/comite.json` : un clone frais reste jouable, et rien n'est envoyé nulle part.
   Ce repli local ne décrit pas l'entrée en alpha en ligne, qui exige un compte (D-156).
