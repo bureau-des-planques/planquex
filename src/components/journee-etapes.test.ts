@@ -4,22 +4,22 @@ import { describe, expect, it } from 'vitest';
 import {
   CARTES_MONTREES,
   ETAPES_JOURNEE,
-  MOTS_CIBLE_JOURNEE,
-  MOTS_MAX_JOURNEE,
-  MOTS_MAX_REPLIQUE,
-  MOTS_MIN_JOURNEE,
+  LOCUTEUR_JOURNEE,
   MOTS_PAR_MINUTE,
+  SECONDES_MAX_JOURNEE,
   etapePourChemin,
   indexEtapeGeste,
   libelleSaut,
   motsDeLaReplique,
   nombreDePhrases,
   passeAuGeste,
+  secondesDeLaJournee,
   secondesDeLecture,
   tapeAvance,
   tapeTermine
 } from './journee-etapes';
 import { CARD_BY_ID } from '@/data';
+import { MOTS_MAX_REPLIQUE, MOTS_MIN_REPLIQUE, PHRASES_MAX_REPLIQUE } from '@/data/repliques-direction';
 
 /**
  * La « Journée d'intégration » (#130, D-066 ; refonte du 30/10/2026, D-160) — le contenu,
@@ -261,60 +261,59 @@ describe('le vocabulaire est celui du jeu, aucun mot interdit (docs/JEU.md §3)'
   });
 });
 
-describe('la Direction accueille le nouveau (31/10/2026)', () => {
-  it('chaque étape a sa ligne, et aucune ne se répète', () => {
+describe('la Direction accueille le nouveau (31/10/2026 ; D-195 (2) depuis le 10/11/2026)', () => {
+  it('chaque étape a sa réplique, et aucune ne se répète', () => {
     const lignes = ETAPES_JOURNEE.map((etape) => etape.direction);
     for (const [index, ligne] of lignes.entries()) {
       // **Le contrôle mord** : une ligne vide laisserait le panneau sans voix.
       expect(ligne.trim().length, ETAPES_JOURNEE[index].titre).toBeGreaterThan(20);
-      // Une réplique se mesure en **mots**, pas en phrases : celle du comité (« Une idée ?
-      // Un défaut ? Le mur est là. ») fait quatre phrases courtes, et c'est la copie
-      // validée par Bastien. La borne de deux phrases (D-136) reste celle des textes
-      // d'étape. Vingt mots : au-delà, la Direction fait un discours.
-      const mots = ligne.split(/\s+/).filter(Boolean).length;
-      expect(mots, ETAPES_JOURNEE[index].titre).toBeLessThanOrEqual(20);
     }
     expect(new Set(lignes).size).toBe(lignes.length);
   });
 
-  it('le Chef de cabinet tient chaque réplique en 12 mots avec son nom (#681)', () => {
+  it('chaque réplique fait 25 à 35 mots et 1 à 3 phrases, le nom du locuteur hors compte (D-195 (2), D-186)', () => {
     for (const etape of ETAPES_JOURNEE) {
-      const motsRendus = `Chef de cabinet ${etape.direction}`.split(/\s+/).filter(Boolean).length;
-      expect(motsRendus, etape.titre).toBeLessThanOrEqual(12);
+      const detail = `${etape.titre} : « ${etape.direction} »`;
+      expect(motsDeLaReplique(etape), detail).toBeGreaterThanOrEqual(MOTS_MIN_REPLIQUE);
+      expect(motsDeLaReplique(etape), detail).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
+      expect(nombreDePhrases(etape.direction), detail).toBeGreaterThanOrEqual(1);
+      expect(nombreDePhrases(etape.direction), detail).toBeLessThanOrEqual(PHRASES_MAX_REPLIQUE);
     }
+  });
+
+  it('`motsDeLaReplique` compte la réplique seule : le nom « Chef de cabinet » est hors budget', () => {
+    // Trente mots de réplique : le compte dit 30, pas 33 (D-186, décision du 10/11/2026).
+    const trente = { ...ETAPES_JOURNEE[0], direction: `${Array.from({ length: 30 }, () => 'mot').join(' ')}.` };
+    expect(motsDeLaReplique(trente)).toBe(30);
+    expect(`${LOCUTEUR_JOURNEE} ${trente.direction}`.split(/\s+/).filter(Boolean).length).toBe(33);
+    // **Le contrôle mord** : l'ancienne réplique de 12 mots (D-181) et une de 60 sortent des bornes.
+    const douze = { ...ETAPES_JOURNEE[0], direction: 'un deux trois quatre cinq six sept huit neuf dix onze douze.' };
+    expect(motsDeLaReplique(douze)).toBeLessThan(MOTS_MIN_REPLIQUE);
+    const soixante = { ...ETAPES_JOURNEE[0], direction: `${Array.from({ length: 60 }, () => 'mot').join(' ')}.` };
+    expect(motsDeLaReplique(soixante)).toBeGreaterThan(MOTS_MAX_REPLIQUE);
   });
 });
 
-describe('le budget de texte rendu (D-181 (3), #682)', () => {
-  it('fixe la cible à 60 mots, tolérance 10 % : 54 à 66', () => {
-    // **Le contrôle mord** : une cible recopiée dans un autre fichier et qui dérive se voit
-    // ici. Le test d'écran lit ces bornes, il n'écrit pas 54 et 66 à la main.
-    expect(MOTS_CIBLE_JOURNEE).toBe(60);
-    expect(MOTS_MIN_JOURNEE).toBe(54);
-    expect(MOTS_MAX_JOURNEE).toBe(66);
+describe('la Journée se lit en 90 s au plus avant la première action (D-195 (2), #782)', () => {
+  it('fixe le plafond à 90 s', () => {
+    // **Le contrôle mord** : le plafond recopié ailleurs et qui dérive se voit ici.
+    expect(SECONDES_MAX_JOURNEE).toBe(90);
   });
 
-  it('compte le nom du locuteur dans la réplique, et fait mordre le plafond de 12', () => {
-    for (const etape of ETAPES_JOURNEE) {
-      expect(motsDeLaReplique(etape), `${etape.titre} : « ${etape.direction} »`).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
-    }
-    // Un mutant de 13 mots, locuteur compris (10 + « Chef de cabinet »), dépasse le plafond :
-    // le contrôle peut échouer.
-    const treizeMots = {
-      ...ETAPES_JOURNEE[0],
-      direction: 'un deux trois quatre cinq six sept huit neuf dix'
-    };
-    expect(motsDeLaReplique(treizeMots)).toBeGreaterThan(MOTS_MAX_REPLIQUE);
+  it('tient sous 90 s à 180 mots par minute (la mesure du dépôt) et à 200 (la mesure du ticket)', () => {
+    // La somme des titres, textes, libellés de geste et répliques des cinq étapes. Le ticket
+    // #782 demande la mesure à 200 mots/min ; le dépôt lit à `MOTS_PAR_MINUTE` (180), plus
+    // sévère : les deux doivent passer.
+    expect(secondesDeLaJournee(ETAPES_JOURNEE, MOTS_PAR_MINUTE)).toBeLessThanOrEqual(SECONDES_MAX_JOURNEE);
+    expect(secondesDeLaJournee(ETAPES_JOURNEE, 200)).toBeLessThanOrEqual(SECONDES_MAX_JOURNEE);
+    expect(secondesDeLaJournee()).toBe(secondesDeLaJournee(ETAPES_JOURNEE, MOTS_PAR_MINUTE));
   });
 
-  it('les cinq textes et répliques laissent leur place aux libellés de boutons', () => {
-    // Le budget rendu ajoute les libellés (« Suivant ») et le titre : les textes seuls
-    // doivent tenir sous le plafond, sinon le panneau ne peut pas y arriver.
-    const total = ETAPES_JOURNEE.reduce(
-      (somme, etape) => somme + `${etape.titre} ${etape.texte} ${etape.direction}`.split(/\s+/).filter(Boolean).length,
-      0
-    );
-    expect(total, 'titre + texte + réplique, sans le locuteur ni les boutons').toBeLessThanOrEqual(MOTS_MAX_JOURNEE);
+  it('le contrôle mord : cinq répliques de 60 mots dépassent le plafond, aux deux vitesses', () => {
+    const soixante = `${Array.from({ length: 60 }, () => 'mot').join(' ')}.`;
+    const bavarde = ETAPES_JOURNEE.map((etape) => ({ ...etape, direction: soixante }));
+    expect(secondesDeLaJournee(bavarde, MOTS_PAR_MINUTE)).toBeGreaterThan(SECONDES_MAX_JOURNEE);
+    expect(secondesDeLaJournee(bavarde, 200)).toBeGreaterThan(SECONDES_MAX_JOURNEE);
   });
 });
 

@@ -7,14 +7,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JourneeIntegration } from './JourneeIntegration';
-import {
-  ETAPES_JOURNEE,
-  LOCUTEUR_JOURNEE,
-  MOTS_CIBLE_JOURNEE,
-  MOTS_MAX_JOURNEE,
-  MOTS_MAX_REPLIQUE,
-  MOTS_MIN_JOURNEE
-} from './journee-etapes';
+import { ETAPES_JOURNEE, LOCUTEUR_JOURNEE, MOTS_PAR_MINUTE, SECONDES_MAX_JOURNEE } from './journee-etapes';
+import { MOTS_MAX_REPLIQUE, MOTS_MIN_REPLIQUE, PHRASES_MAX_REPLIQUE } from '@/data/repliques-direction';
 import { marquerGeste, oublierGestes } from './journee-gestes';
 import { CIBLE_DE_GESTE, cibleJournee } from './journee-cible';
 import { allerAEtape, etapeJournee, rejouerJournee, remettreJourneeAuDebut } from './journee-etape';
@@ -764,15 +758,22 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
       expect(visuel?.querySelector('strong')?.textContent).toBe('Chef de cabinet');
       expect(annonce).toHaveAttribute('aria-live', 'polite');
       expect(annonce).toHaveAttribute('aria-atomic', 'true');
-      expect(annonce).toHaveTextContent(`Chef de cabinet : ${ETAPES_JOURNEE[index].direction}`);
-      expect((annonce?.textContent ?? '').trim().split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(12);
+      expect(annonce).toHaveTextContent(`${LOCUTEUR_JOURNEE} : ${ETAPES_JOURNEE[index].direction}`);
+      // La réplique annoncée, sans le nom du locuteur, tient dans le budget de D-195 (2).
+      const motsAnnonces = (annonce?.textContent ?? '')
+        .replace(`${LOCUTEUR_JOURNEE} :`, '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean).length;
+      expect(motsAnnonces).toBeGreaterThanOrEqual(MOTS_MIN_REPLIQUE);
+      expect(motsAnnonces).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
       unmount();
     }
   });
 
   it('un tap affiche toute la réplique, et ne fait pas avancer une étape avec geste (D-187 (4), D-196)', async () => {
     const { unmount } = monterPanneau(0);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : De la part de la Direction/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu viens d’ouvrir ton premier paquet/ });
     expect(encadre.querySelector('.journee__texte-anime')).toHaveTextContent(ETAPES_JOURNEE[0].direction);
     expect(encadre).not.toHaveAttribute('data-complet');
     await userEvent.click(encadre);
@@ -785,14 +786,14 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('la réplique est un vrai bouton : Entrée et Espace l’affichent, et son nom dit l’action', async () => {
     const { unmount } = monterPanneau(1);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Vingt cartes, comptées\..*tout le texte/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu as chargé vingt cartes.*tout le texte/ });
     act(() => encadre.focus());
     await userEvent.keyboard('{Enter}');
     expect(encadre).toHaveAttribute('data-complet', 'true');
     unmount();
 
     const { unmount: autre } = monterPanneau(3);
-    const espace = screen.getByRole('button', { name: /Chef de cabinet : Sinon, tout s’efface/ });
+    const espace = screen.getByRole('button', { name: /Chef de cabinet : Tu joues depuis dix minutes/ });
     act(() => espace.focus());
     await userEvent.keyboard(' ');
     expect(espace).toHaveAttribute('data-complet', 'true');
@@ -802,7 +803,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
   it('sous mouvement réduit, la réplique est entière d’emblée : le nom ne demande plus de tap d’affichage', () => {
     const { unmount } = monterPanneau(0);
     act(() => useStore.setState({ reducedMotion: true }));
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : De la part de la Direction/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu viens d’ouvrir ton premier paquet/ });
     // **Le contrôle mord** : sous mouvement réduit, la phrase « tout le texte » ne se lit plus.
     expect(encadre).toHaveAttribute('data-complet', 'true');
     expect(encadre.getAttribute('aria-label')).not.toMatch(/tout le texte/);
@@ -848,7 +849,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('le premier tap du comité finit l’écriture ; le second termine la Journée (10/11/2026)', async () => {
     const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Le mur lit tout/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu as collé ton post-it/ });
     await userEvent.click(encadre);
     // **Le contrôle mord** : un premier tap qui terminerait ferait passer ce test.
     expect(encadre).toHaveAttribute('data-complet', 'true');
@@ -863,7 +864,9 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
   it('sous mouvement réduit, un seul tap sur le comité termine la Journée', async () => {
     const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
     act(() => useStore.setState({ reducedMotion: true }));
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Le mur lit tout.*terminer la Journée/ });
+    const encadre = screen.getByRole('button', {
+      name: /Chef de cabinet : Tu as collé ton post-it.*terminer la Journée/
+    });
     await userEvent.click(encadre);
     expect(useStore.getState().tutorielVu).toBe(true);
     unmount();
@@ -872,7 +875,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('un tap sur une étape avec geste ne termine jamais la Journée', async () => {
     const { unmount } = monterPanneau(1);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Vingt cartes, comptées\./ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Tu as chargé vingt cartes/ });
     await userEvent.click(encadre);
     await userEvent.click(encadre);
     // **Le contrôle mord** : un tap qui terminerait sur une étape avec geste écrirait `tutorielVu`.
@@ -1069,33 +1072,43 @@ describe('la pause se joue au clavier et à l’écran (D-162 (2), #678)', () =>
 });
 
 /**
- * **Le budget de texte rendu** (D-181 (3), #682) — mesuré sur le **DOM**, pas sur les
- * objets de données : un libellé ajouté dans le JSX doit peser.
+ * **Le budget de texte rendu** (D-195 (2), #782 ; remplace la mesure de D-181 (3), #682) —
+ * mesuré sur le **DOM**, pas sur les objets de données : un libellé ajouté dans le JSX doit
+ * peser.
  *
  * Ce qui compte (D-181 (3), précisé par D-185 (1) et D-186 (1)) : le titre
  * (`#journee-titre`, compteur et préfixe `sr-only` exclus), le texte (`#journee-texte`),
  * la **réplique sans son locuteur** (`.journee__direction`, le `<strong>` retiré) et les
- * libellés des boutons d'action de l'étape (`.actions` : le geste, s'il est
- * visible). Fourchette : 54 à 66 mots.
+ * libellés des boutons d'action de l'étape (`.actions` : le geste, s'il est visible).
  *
- * **Hors budget** : le **nom du locuteur** « Chef de cabinet » (D-186 (1)), libellé répété
- * à chaque étape, et le **bouton de sortie permanent** « Passer : tu ne verras pas le
- * combat » / « Relire la Journée… » (D-185 (1)), un contrôle, le même partout. Le nom reste
- * dans la **borne par réplique** : « Chef de cabinet » + réplique ≤ 12 mots (D-186 (3)).
+ * **Deux bornes** (D-195 (2)) : chaque réplique rendue fait **25 à 35 mots** et **1 à 3
+ * phrases**, et la Journée entière se lit en **90 s au plus** — à `MOTS_PAR_MINUTE` (180, la
+ * mesure du dépôt) et à 200 mots/min (la mesure du ticket #782). L'ancienne fourchette de 54 à
+ * 66 mots (D-181 (3)) ne peut pas tenir avec cinq répliques de 25 mots : elle tombe avec
+ * D-195 (2), le budget total restant à confirmer (D-195 (5)).
+ *
+ * **Hors budget** : le **nom du locuteur** « Chef de cabinet » (D-186 (1), D-195 (4)), libellé
+ * répété à chaque étape, et le **bouton de sortie permanent** « Passer : tu ne verras pas le
+ * combat » / « Relire la Journée… » (D-185 (1)), un contrôle, le même partout.
  */
 function mots(texte: string): number {
   return texte.split(/\s+/).filter(Boolean).length;
 }
 
+function phrases(texte: string): number {
+  return texte
+    .split(/[.!?]+/)
+    .map((phrase) => phrase.trim())
+    .filter(Boolean).length;
+}
+
 interface CompteDeTexte {
   titre: string;
   mots: number;
-  /** La réplique **sans** le nom du locuteur : c'est ce que le budget compte (D-186 (1)). */
+  /** La réplique **sans** le nom du locuteur : c'est elle que le budget borne (D-186 (1)). */
   repliqueMots: number;
-  /** La réplique **avec** le nom : c'est elle que la borne de 12 mots lit (D-186 (3)). */
-  repliqueAvecNomMots: number;
+  repliquePhrases: number;
   replique: string;
-  repliqueAvecNom: string;
   detail: string;
   source: 'DOM' | 'données';
 }
@@ -1114,9 +1127,8 @@ function compteDeLEtape(index: number): CompteDeTexte {
     const texte = panneau.querySelector('#journee-texte')?.textContent?.trim() ?? '';
     // La réplique rendue, nom compris (`<strong>Chef de cabinet</strong> …`), puis la même
     // **sans** le nom : on retire le `<strong>` du clone. Le nom est un libellé répété, hors
-    // budget (D-186 (1)) ; il reste dans la borne de 12 mots (D-186 (3)).
+    // budget (D-186 (1)).
     const repliqueEl = document.querySelector('.journee__direction');
-    const repliqueAvecNom = repliqueEl?.textContent?.trim() ?? '';
     const repliqueClone = repliqueEl?.cloneNode(true) as HTMLElement | undefined;
     repliqueClone?.querySelector('strong')?.remove();
     const replique = repliqueClone?.textContent?.trim() ?? '';
@@ -1128,8 +1140,7 @@ function compteDeLEtape(index: number): CompteDeTexte {
       titre: etape.titre,
       mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),
       repliqueMots: mots(replique),
-      repliqueAvecNomMots: mots(repliqueAvecNom),
-      repliqueAvecNom,
+      repliquePhrases: phrases(replique),
       replique,
       detail: morceaux.map((morceau) => `« ${morceau} »`).join(' + '),
       source: 'DOM'
@@ -1138,16 +1149,13 @@ function compteDeLEtape(index: number): CompteDeTexte {
     // **Le panneau de l'étape du combat n'est jamais rendu** (D-162 (3)) : il s'efface sur
     // `/battle`. On compte la même source que le panneau lirait, sans quoi cette étape
     // échapperait au budget ; un mot ajouté à son texte pèse quand même.
-    // Sans le nom, comme le DOM ci-dessus (D-186 (1)) ; avec le nom pour la borne (D-186 (3)).
     const replique = etape.direction;
-    const repliqueAvecNom = `${LOCUTEUR_JOURNEE} ${etape.direction}`;
-    const morceaux = [etape.titre, etape.texte, replique];
+    const morceaux = [etape.titre, etape.texte, replique, etape.action];
     compte = {
       titre: etape.titre,
       mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),
       repliqueMots: mots(replique),
-      repliqueAvecNomMots: mots(repliqueAvecNom),
-      repliqueAvecNom,
+      repliquePhrases: phrases(replique),
       replique,
       detail: morceaux.map((morceau) => `« ${morceau} »`).join(' + '),
       source: 'données'
@@ -1158,35 +1166,41 @@ function compteDeLEtape(index: number): CompteDeTexte {
   return compte;
 }
 
+/** La lecture du total, en secondes, à `motsParMinute`. */
+function secondes(total: number, motsParMinute: number): number {
+  return (total / motsParMinute) * 60;
+}
+
 function detailDesComptes(comptes: readonly CompteDeTexte[]): string {
   const total = comptes.reduce((somme, compte) => somme + compte.mots, 0);
   return [
-    `Le budget de texte rendu (D-181 (3), #682) : ${total} mots, cible ${MOTS_CIBLE_JOURNEE} (${MOTS_MIN_JOURNEE} à ${MOTS_MAX_JOURNEE}).`,
+    `Le budget de texte rendu (D-195 (2), #782) : ${total} mots, soit ${secondes(total, MOTS_PAR_MINUTE).toFixed(1)} s à ${MOTS_PAR_MINUTE} mots/min et ${secondes(total, 200).toFixed(1)} s à 200, plafond ${SECONDES_MAX_JOURNEE} s.`,
     ...comptes.map(
       (compte, index) =>
-        `  étape ${index + 1} « ${compte.titre} » : ${compte.mots} mots, réplique ${compte.repliqueMots} sans le nom (${compte.repliqueAvecNomMots} avec) [${compte.source}] = ${compte.detail}`
+        `  étape ${index + 1} « ${compte.titre} » : ${compte.mots} mots, réplique ${compte.repliqueMots} mots et ${compte.repliquePhrases} phrases, sans le nom [${compte.source}] = ${compte.detail}`
     )
   ].join('\n');
 }
 
-describe('le budget de texte de la Journée (D-181 (3), #682)', () => {
-  it('tient ≈ 60 mots rendus sur les cinq étapes, et 12 mots par réplique', () => {
+describe('le budget de texte de la Journée (D-195 (2), #782)', () => {
+  it('rend 25 à 35 mots et 1 à 3 phrases par réplique, et se lit en 90 s au plus à 180 et à 200 mots/min', () => {
     const comptes = ETAPES_JOURNEE.map((_, index) => compteDeLEtape(index));
     const total = comptes.reduce((somme, compte) => somme + compte.mots, 0);
     const detail = detailDesComptes(comptes);
 
-    // **Le contrôle mord** : la borne de 12 mots se lit **avec** le nom (D-186 (3)) ; une
-    // réplique à 13 mots, nom compris, nomme l'étape, son compte et son texte.
+    // **Le contrôle mord** : la borne se lit **sans** le nom (D-186, D-195 (4)) ; une réplique
+    // rendue à 24 ou 36 mots, ou à 4 phrases, nomme l'étape, son compte et son texte.
     for (const compte of comptes) {
-      expect(
-        compte.repliqueAvecNomMots,
-        `${detail}\nLa réplique de « ${compte.titre} » fait ${compte.repliqueAvecNomMots} mots avec le nom : « ${compte.repliqueAvecNom} »`
-      ).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
+      const ou = `${detail}\nLa réplique de « ${compte.titre} » fait ${compte.repliqueMots} mots et ${compte.repliquePhrases} phrases : « ${compte.replique} »`;
+      expect(compte.repliqueMots, ou).toBeGreaterThanOrEqual(MOTS_MIN_REPLIQUE);
+      expect(compte.repliqueMots, ou).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
+      expect(compte.repliquePhrases, ou).toBeGreaterThanOrEqual(1);
+      expect(compte.repliquePhrases, ou).toBeLessThanOrEqual(PHRASES_MAX_REPLIQUE);
     }
-    // **Le contrôle mord** : le total hors nom et hors sortie doit rester dans la fourchette
-    // (54 à 66) ; un texte qui la dépasse fait échouer cette ligne, et c'est ce que vérifie
-    // le mutant « total > 66 ».
-    expect(total, detail).toBeGreaterThanOrEqual(MOTS_MIN_JOURNEE);
-    expect(total, detail).toBeLessThanOrEqual(MOTS_MAX_JOURNEE);
+    // **Le contrôle mord** : le total hors nom et hors sortie doit se lire en 90 s au plus,
+    // à la vitesse du dépôt (180) comme à celle du ticket (200) ; cinq répliques de 60 mots
+    // (≈ 350 mots, 117 s à 180) feraient échouer cette ligne.
+    expect(secondes(total, MOTS_PAR_MINUTE), detail).toBeLessThanOrEqual(SECONDES_MAX_JOURNEE);
+    expect(secondes(total, 200), detail).toBeLessThanOrEqual(SECONDES_MAX_JOURNEE);
   });
 });

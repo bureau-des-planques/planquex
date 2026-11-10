@@ -1,19 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { FORBIDDEN_ANY_CASE, motInterdit } from '@/test/vocabulaire-interdit';
+import {
+  MOTS_MAX_REPLIQUE,
+  MOTS_MIN_REPLIQUE,
+  PHRASES_MAX_REPLIQUE,
+  REPLIQUES_DIRECTION,
+  REPLIQUES_JOURNEE
+} from './repliques-direction';
 
 /**
  * **Le budget d'une réplique du Chef de cabinet** (D-195 (2), #782) : 25 à 35 mots, 1 à 3
  * phrases, aucun mot interdit. Les mots se comptent comme `motsDeLaReplique` (séparateurs
- * d'espaces) ; le nom du locuteur n'est pas compté, la réplique seule l'est.
+ * d'espaces) ; le nom du locuteur n'est pas compté, la réplique seule l'est (D-186, décision
+ * du propriétaire du 10/11/2026).
  *
- * Les textes écrits ne sont **pas encore** branchés : `REPLIQUES_BORNEES` est vide, et les
- * anciennes lignes (3 à 11 mots, D-181) ne passeraient pas. Un commit suivant n'a qu'à
- * ajouter les nouvelles répliques dans `REPLIQUES_BORNEES`.
+ * `REPLIQUES_BORNEES` réunit **toutes** les répliques du jeu : les cinq de la Journée et les
+ * dix-neuf du combat. Une réplique ajoutée dans `repliques-direction.ts` est bornée d'office.
  */
 
-const MOTS_MIN = 25;
-const MOTS_MAX = 35;
-const PHRASES_MAX = 3;
+const MOTS_MIN = MOTS_MIN_REPLIQUE;
+const MOTS_MAX = MOTS_MAX_REPLIQUE;
+const PHRASES_MAX = PHRASES_MAX_REPLIQUE;
 
 /** Les mots d'un texte, séparés par des espaces (comme `motsDeLaReplique`). */
 function compterMots(texte: string): number {
@@ -40,8 +47,11 @@ function refusDeReplique(texte: string): string[] {
   return refus;
 }
 
-/** Les répliques qui passent le budget. Vide tant que les nouveaux textes ne sont pas branchés. */
-const REPLIQUES_BORNEES: readonly string[] = [];
+/** Toutes les répliques du jeu : la Journée (cinq) et le combat (dix-neuf). */
+const REPLIQUES_BORNEES: readonly string[] = [
+  ...Object.values(REPLIQUES_JOURNEE),
+  ...Object.values(REPLIQUES_DIRECTION).flat()
+];
 
 /** Un texte de `n` mots, en une seule phrase. */
 function phrase(n: number): string {
@@ -49,6 +59,14 @@ function phrase(n: number): string {
 }
 
 describe('le budget d’une réplique du Chef de cabinet (D-195 (2))', () => {
+  it('fixe les bornes de D-195 (2) : 25 à 35 mots, 3 phrases au plus', () => {
+    // **Le contrôle mord** : une borne qui dérive dans `repliques-direction.ts` se voit ici,
+    // et les tests d'écran lisent ces constantes au lieu d'écrire 25 et 35 à la main.
+    expect(MOTS_MIN_REPLIQUE).toBe(25);
+    expect(MOTS_MAX_REPLIQUE).toBe(35);
+    expect(PHRASES_MAX_REPLIQUE).toBe(3);
+  });
+
   it('accepte 25 mots et 35 mots, en une phrase', () => {
     expect(refusDeReplique(phrase(25))).toEqual([]);
     expect(refusDeReplique(phrase(35))).toEqual([]);
@@ -87,10 +105,26 @@ describe('le budget d’une réplique du Chef de cabinet (D-195 (2))', () => {
   });
 });
 
-describe('les répliques bornées passent le budget', () => {
-  it('ne contient que des répliques qui passent (vide tant que les textes ne sont pas branchés)', () => {
+describe('les répliques du jeu passent le budget (D-195 (2), #782)', () => {
+  it('borne les cinq répliques de la Journée et les dix-neuf du combat, sans doublon', () => {
+    expect(Object.keys(REPLIQUES_JOURNEE)).toHaveLength(5);
+    expect(Object.values(REPLIQUES_DIRECTION).flat()).toHaveLength(19);
+    expect(REPLIQUES_BORNEES).toHaveLength(24);
+    expect(new Set(REPLIQUES_BORNEES).size).toBe(REPLIQUES_BORNEES.length);
+  });
+
+  it('chaque réplique fait 25 à 35 mots, 1 à 3 phrases, sans mot interdit', () => {
     for (const replique of REPLIQUES_BORNEES) {
       expect(refusDeReplique(replique), replique).toEqual([]);
+    }
+  });
+
+  it('ne s’en prend jamais à la personne : aucune insulte, aucune vulgarité', () => {
+    // **Provocante, et une petite injure de temps en temps** (30/10/2026) : « bras cassé »
+    // passe, comme dans un vrai couloir. Ce qui reste interdit, c'est ce qui s'en prend à la
+    // personne et non à son travail : l'insulte gratuite, l'ableisme, la vulgarité.
+    for (const replique of REPLIQUES_BORNEES) {
+      expect(replique).not.toMatch(/idiot|imbécile|débile|abruti|incompétent|crétin|mongol|connard|salope|putain/i);
     }
   });
 });

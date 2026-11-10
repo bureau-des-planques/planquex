@@ -204,25 +204,26 @@ export function libelleSaut(etape: number): string {
 
 /**
  * **Le locuteur de la réplique** (D-181 (1)) : la Direction parle par son Chef de cabinet.
- * Il vit ici pour que la mesure de la réplique (nom compris) ne recopie pas la chaîne.
+ * Il vit ici pour que l'écran et ses tests ne recopient pas la chaîne. Son nom est **hors du
+ * budget** de la réplique (D-186, D-195 (4)) : `motsDeLaReplique` ne le compte pas.
  */
 export const LOCUTEUR_JOURNEE = 'Chef de cabinet';
 
 /**
- * **Le budget de texte de la Journée** (D-181 (3), acquis le 03/11/2026) : 12 mots au plus
- * par réplique, locuteur compris, et ≈ 60 mots **rendus** sur les cinq étapes, tolérance de
- * 10 % — soit 54 à 66. Le test d'écran mesure le DOM ; ces constantes fixent la cible, et
- * `motsDeLaReplique` la borne unitaire.
+ * **Le budget de texte de la Journée** (D-195 (2), 10/11/2026 ; amende D-181 (3)) : chaque
+ * réplique fait 1 à 3 phrases et 25 à 35 mots, bornes dans `src/data/repliques-direction.ts`,
+ * et la Journée entière — titre, texte, libellé du geste et réplique des cinq étapes — se lit
+ * en **90 s au plus** avant la première action. L'ancien plafond de ≈ 60 mots rendus (54 à 66,
+ * D-181 (3)) ne peut pas tenir avec cinq répliques de 25 mots : il tombe avec D-195 (2), et le
+ * budget total reste à confirmer (D-195 (5)). Le test d'écran mesure le DOM ; ces constantes
+ * fixent le plafond.
  */
-export const MOTS_MAX_REPLIQUE = 12;
-export const MOTS_CIBLE_JOURNEE = 60;
-export const MOTS_TOLERANCE_JOURNEE = 0.1;
-export const MOTS_MIN_JOURNEE = Math.round(MOTS_CIBLE_JOURNEE * (1 - MOTS_TOLERANCE_JOURNEE));
-export const MOTS_MAX_JOURNEE = Math.round(MOTS_CIBLE_JOURNEE * (1 + MOTS_TOLERANCE_JOURNEE));
+export const SECONDES_MAX_JOURNEE = 90;
 
 /**
  * Vitesse de lecture retenue pour la mesure : **180 mots par minute**, la lecture d'un
- * écran par un testeur, pas celle d'un correcteur.
+ * écran par un testeur, pas celle d'un correcteur. Le ticket #782 demande aussi la mesure à
+ * 200 mots par minute : `secondesDeLaJournee` accepte la vitesse, le test fait les deux.
  */
 export const MOTS_PAR_MINUTE = 180;
 
@@ -235,16 +236,28 @@ export function motsDeLEtape(etape: EtapeJournee): number {
 }
 
 /**
- * Les mots d'une réplique **rendue** : le nom du locuteur compte (D-181 (3)). Une réplique
- * se mesure en mots, pas en phrases — « Vingt cartes, comptées. » en fait trois.
+ * Les mots d'une réplique, **sans** le nom du locuteur (D-186, D-195 (4)) : c'est le texte seul
+ * que D-195 (2) borne à 25–35 mots. Une réplique se mesure en mots, pas en phrases.
  */
 export function motsDeLaReplique(etape: EtapeJournee): number {
-  return `${LOCUTEUR_JOURNEE} ${etape.direction}`.split(/\s+/).filter(Boolean).length;
+  return etape.direction.split(/\s+/).filter(Boolean).length;
 }
 
 /** La lecture de l'étape, en secondes, à `MOTS_PAR_MINUTE`. */
 export function secondesDeLecture(etape: EtapeJournee): number {
   return (motsDeLEtape(etape) / MOTS_PAR_MINUTE) * 60;
+}
+
+/**
+ * **La lecture de toute la Journée**, en secondes (D-195 (2)) : la somme des mots de chaque
+ * étape, à `motsParMinute`. C'est elle que le plafond de `SECONDES_MAX_JOURNEE` borne.
+ */
+export function secondesDeLaJournee(
+  etapes: readonly EtapeJournee[] = ETAPES_JOURNEE,
+  motsParMinute: number = MOTS_PAR_MINUTE
+): number {
+  const mots = etapes.reduce((somme, etape) => somme + motsDeLEtape(etape), 0);
+  return (mots / motsParMinute) * 60;
 }
 
 /** Les phrases d'un texte : un point, un point d'interrogation ou un point d'exclamation. */
