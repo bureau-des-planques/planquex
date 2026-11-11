@@ -12,7 +12,8 @@ import { reglageDirection } from '@/game/deck-direction';
 import { DIFFICULTES } from '@/game/ia';
 import { estApprouve, libelleEtat } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
-import { STORAGE_KEY, useStore } from '@/store/useStore';
+import { creerSauvegarde, restaurerSauvegarde } from '@/store/sauvegarde';
+import { useStore } from '@/store/useStore';
 import { APP_LABEL } from '@/version';
 
 /**
@@ -64,8 +65,6 @@ export function Settings() {
   } = useStore();
   /** Le halo de « Créer ma sauvegarde » : seulement quand la Journée est à cette étape. */
   const cibleSauvegarde = useEstCibleJournee('sauvegarde');
-  const exporterSauvegarde = useStore((state) => state.exporterSauvegarde);
-  const importerSauvegarde = useStore((state) => state.importerSauvegarde);
   const configure = useComptes((state) => state.configure);
   const session = useComptes((state) => state.session);
   const compte = useComptes((state) => state.compte);
@@ -76,31 +75,49 @@ export function Settings() {
   /** La réinitialisation efface tout, sans retour : elle passe par la confirmation du jeu (#131). */
   const [confirmeReset, setConfirmeReset] = useState(false);
 
-  const creerSauvegarde = () => {
-    const texte = exporterSauvegarde();
+  /** Le geste est asynchrone : il relit le Deck et la Collection sur le compte avant d'écrire. */
+  const [enCours, setEnCours] = useState(false);
+
+  const creer = async () => {
+    setEnCours(true);
+    const { texte, deck, collection } = await creerSauvegarde();
+    setEnCours(false);
     setSauvegarde(texte);
     // **Le geste de l'étape « Tes données »** (30/10/2026) : il n'a pas d'autre trace que
     // celle-ci, et c'est un fait de session — le panneau de la Journée s'ouvre aussitôt.
     marquerGeste('sauvegarde');
+    // Ce que l'archive porte, dit sans promettre plus : le compte ou la copie de l'appareil.
+    const origine =
+      deck === 'compte' && collection === 'compte'
+        ? 'Ton Deck et ta Collection viennent de ton compte.'
+        : 'Hors ligne ou compte injoignable : le Deck et la Collection viennent de cet appareil, peut-être en retard.';
     // Le presse-papier peut être refusé (contexte non sécurisé, permission) : le texte
     // reste dans la zone, il suffit de le sélectionner. On ne ment pas dans le message.
     navigator.clipboard?.writeText(texte).then(
-      () =>
-        setMessage({
-          ton: 'ok',
-          texte: 'Sauvegarde copiée. Colle-la dans un fichier ou un message : c’est ta seule copie.'
-        }),
-      () => setMessage({ ton: 'ok', texte: 'Sauvegarde prête ci-dessus — recopie-la à la main.' })
+      () => setMessage({ ton: 'ok', texte: `Sauvegarde copiée. ${origine}` }),
+      () => setMessage({ ton: 'ok', texte: `Sauvegarde prête ci-dessus — recopie-la à la main. ${origine}` })
     );
   };
 
-  const restaurerSauvegarde = () => {
-    const resultat = importerSauvegarde(sauvegarde);
-    setMessage(
-      resultat.ok
-        ? { ton: 'ok', texte: 'Sauvegarde restaurée : ta Collection et ton Deck sont revenus.' }
-        : { ton: 'ko', texte: resultat.raison }
-    );
+  const restaurer = async () => {
+    setEnCours(true);
+    const resultat = await restaurerSauvegarde(sauvegarde);
+    setEnCours(false);
+    if (!resultat.ok) {
+      setMessage({ ton: 'ko', texte: resultat.raison });
+      return;
+    }
+    const morceaux = ['Réglages restaurés.'];
+    if (resultat.deck === 'restaure') morceaux.push('Deck remis sur ton compte.');
+    if (resultat.deck === 'inchange') morceaux.push('Ton Deck n’a pas changé.');
+    if (resultat.deck === 'compte') morceaux.push('Ton compte avait déjà un Deck : c’est lui qui est gardé.');
+    if (resultat.deck === 'refuse') morceaux.push('Le Deck de la sauvegarde est illégal : ton Deck actuel est gardé.');
+    if (resultat.ecartees > 0) {
+      morceaux.push(`${resultat.ecartees} carte(s) écartée(s) : absentes de ta Collection ou hors règles.`);
+    }
+    if (resultat.synchro !== null) morceaux.push('Le Deck partira au retour du réseau ou d’une connexion.');
+    morceaux.push('La Collection, elle, reste celle de ton compte.');
+    setMessage({ ton: 'ok', texte: morceaux.join(' ') });
   };
 
   return (
@@ -315,9 +332,11 @@ export function Settings() {
             la **largeur de lecture** qui manquait, pas le formateur. Même remède que la
             section « Traces de combat » (#208). */}
         <p className="muted max-w-[62ch]">
-          Ton Deck et ta Collection sont encore dans ce navigateur (clé <code>{STORAGE_KEY}</code>) tant que la synchro
-          avec le compte n’est pas livrée. Ton nom aussi reste ici.{' '}
-          <strong>Vider les données du navigateur efface tout cela</strong> : copie ce texte avant.
+          Ton Deck et ta Collection sont sur ton compte : ils te suivent sur un autre appareil, sans rien copier. La
+          sauvegarde garde en plus ce qui reste dans ce navigateur — ton nom, tes réglages, les tutoriels vus, ta partie
+          en cours — et une copie du Deck et de la Collection.{' '}
+          <strong>Elle restaure tes réglages et ton Deck, jamais ta Collection</strong> : seul le compte crédite des
+          cartes.
         </p>
         <textarea
           className="settings__save"
@@ -332,11 +351,12 @@ export function Settings() {
             className="button"
             /* L'étape « Tes données » désigne ce bouton : le testeur repart avec sa copie. */
             data-journee-cible={cibleSauvegarde ? 'sauvegarde' : undefined}
-            onClick={creerSauvegarde}
+            disabled={enCours}
+            onClick={creer}
           >
             <Copy size={16} /> Créer ma sauvegarde
           </button>
-          <button type="button" className="button" onClick={restaurerSauvegarde} disabled={!sauvegarde.trim()}>
+          <button type="button" className="button" onClick={restaurer} disabled={enCours || !sauvegarde.trim()}>
             <ClipboardPaste size={16} /> Restaurer ce texte
           </button>
         </div>
@@ -381,7 +401,7 @@ export function Settings() {
       <Confirmation
         open={confirmeReset}
         titre="Réinitialiser la progression ?"
-        texte="Ta Collection, ton Deck, ton nom et ta partie en cours sont effacés de ce navigateur, sans retour possible. Crée d’abord ta sauvegarde si tu veux pouvoir revenir."
+        texte="Ton nom, tes réglages, ton Deck et ta partie en cours sont effacés de ce navigateur, sans retour possible. Ta Collection, elle, se relit depuis ton compte. Crée d’abord ta sauvegarde si tu veux pouvoir remettre tes réglages et ton Deck."
         confirmer="Tout effacer"
         onConfirm={() => {
           reset();

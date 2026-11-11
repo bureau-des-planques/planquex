@@ -433,3 +433,71 @@ async function appelerDeck(nom: string, corps: Record<string, unknown>): Promise
   }
   return reponse;
 }
+
+/** L'URL REST du Deck du compte, dans l'ordre des rangs (la RLS de `0020` ne rend que le sien). */
+export function urlLectureDeck(configuration: ConfigurationMur): string {
+  return `${configuration.url.replace(/\/+$/, '')}/rest/v1/deck?select=carte_id,quantite,rang&order=rang`;
+}
+
+/**
+ * **Lit le Deck du compte** tel que la base le tient (#495) : la source de vérité de
+ * l'export. Rend les identifiants de carte dans l'ordre des rangs, une entrée par exemplaire.
+ * Une carte que le catalogue ne connaît plus est écartée, comme dans `importerDeck`.
+ *
+ * Lève une `ErreurDeck` nommée (mêmes quatre raisons que le rejeu), jamais une erreur nue.
+ */
+export async function lireDeck(): Promise<string[]> {
+  const sources = sourcesRemplacees ?? sourcesDeck();
+  if (!sources.enLigne()) throw new ErreurDeck('hors-ligne', 'Hors ligne : le Deck du compte ne se relit pas.');
+  const configuration = sources.configuration;
+  if (!configuration) throw new ErreurDeck('configuration', 'Le serveur du jeu n’est pas configuré.');
+  const jeton = await sources.jeton();
+  if (!jeton) throw new ErreurDeck('refus', 'Connecte-toi pour relire ton Deck.');
+
+  let reponse: Response;
+  try {
+    reponse = await sources.fetchImpl(urlLectureDeck(configuration), {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${jeton}`, apikey: configuration.clePublique }
+    });
+  } catch {
+    throw new ErreurDeck('reseau', 'Le Deck n’a pas pu être relu : réessaie.');
+  }
+  if (reponse.status === 401 || reponse.status === 403) {
+    throw new ErreurDeck('refus', 'Connecte-toi pour relire ton Deck.');
+  }
+  if (!reponse.ok) throw new ErreurDeck('reseau', 'Le Deck n’a pas pu être relu : réessaie.');
+
+  let corps: unknown;
+  try {
+    corps = await reponse.json();
+  } catch {
+    throw new ErreurDeck('reseau', 'La réponse du serveur est illisible : réessaie.');
+  }
+  if (!Array.isArray(corps)) throw new ErreurDeck('reseau', 'La réponse du serveur est illisible : réessaie.');
+
+  const lignes: LigneDeckServeur[] = [];
+  for (const ligne of corps) {
+    const { carte_id: carte, quantite, rang } = (ligne ?? {}) as Record<string, unknown>;
+    if (
+      typeof carte !== 'string' ||
+      carte === '' ||
+      typeof quantite !== 'number' ||
+      !Number.isInteger(quantite) ||
+      quantite < 1 ||
+      typeof rang !== 'number' ||
+      !Number.isInteger(rang) ||
+      rang < 0
+    ) {
+      throw new ErreurDeck('reseau', 'La réponse du serveur est illisible : réessaie.');
+    }
+    lignes.push({ carte, quantite, rang });
+  }
+  lignes.sort((a, b) => a.rang - b.rang);
+  const ids: string[] = [];
+  for (const ligne of lignes) {
+    if (!getCard(ligne.carte)) continue;
+    for (let exemplaire = 0; exemplaire < ligne.quantite; exemplaire += 1) ids.push(ligne.carte);
+  }
+  return ids;
+}

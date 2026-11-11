@@ -286,9 +286,8 @@ describe('Générateur retiré — migration v14 → v15 (#651, D-179)', () => {
     expect(migratePersisted({ packsOpened: 0, rng: seedRng(9) }, 9)).not.toHaveProperty('rng');
   });
 
-  it('ne l’écrit plus dans la forme persistée ni dans la sauvegarde exportée', () => {
+  it('ne l’écrit plus dans la forme persistée', () => {
     expect(partializeState(useStore.getState())).not.toHaveProperty('rng');
-    expect(useStore.getState().exporterSauvegarde()).not.toContain('"rng"');
   });
 });
 
@@ -817,74 +816,6 @@ describe('Pas-à-pas du premier combat (#143, forme v6)', () => {
   });
 });
 
-describe('Sauvegarde — export et import', () => {
-  it('fait l’aller-retour sans rien perdre', () => {
-    useStore.getState().setName('Bastien');
-    useStore.getState().setCafeTypes(['SSE', 'RH']);
-    useStore.getState().setTutorielVu(true);
-    const avant = partializeState(useStore.getState());
-
-    const texte = useStore.getState().exporterSauvegarde();
-    useStore.getState().reset();
-    expect(useStore.getState().name).not.toBe('Bastien');
-
-    const resultat = useStore.getState().importerSauvegarde(texte);
-
-    expect(resultat).toEqual({ ok: true });
-    expect(partializeState(useStore.getState())).toEqual(avant);
-  });
-
-  it('nomme le jeu et la version dans le texte exporté', () => {
-    const fichier = JSON.parse(useStore.getState().exporterSauvegarde()) as {
-      jeu: string;
-      version: number;
-    };
-    expect(fichier.jeu).toBe('bureau-des-planques');
-    expect(fichier.version).toBe(STORAGE_VERSION);
-  });
-
-  it('refuse un texte illisible, un autre jeu, une sauvegarde incomplète', () => {
-    const avant = partializeState(useStore.getState());
-
-    expect(useStore.getState().importerSauvegarde('pas du json')).toMatchObject({ ok: false });
-    expect(useStore.getState().importerSauvegarde(JSON.stringify({ jeu: 'un-autre-jeu', version: 5 }))).toMatchObject({
-      ok: false
-    });
-    expect(
-      useStore.getState().importerSauvegarde(JSON.stringify({ jeu: 'bureau-des-planques', version: 5, etat: {} }))
-    ).toMatchObject({ ok: false });
-
-    // Rien n'a bougé : c'est la garantie qui compte, pas le message.
-    expect(partializeState(useStore.getState())).toEqual(avant);
-  });
-
-  it('refuse une sauvegarde plus récente que ce build', () => {
-    const futur = JSON.stringify({
-      jeu: 'bureau-des-planques',
-      version: STORAGE_VERSION + 1,
-      etat: { name: 'Futur', owned: {}, deck: [] }
-    });
-
-    const resultat = useStore.getState().importerSauvegarde(futur);
-
-    expect(resultat.ok).toBe(false);
-    expect(useStore.getState().name).not.toBe('Futur');
-  });
-
-  it('accepte une sauvegarde plus ancienne, et la migre', () => {
-    const ancienne = JSON.stringify({
-      jeu: 'bureau-des-planques',
-      version: 2,
-      etat: { name: 'Vétéran', owned: { 'rh-responsable-qvt': 2 }, deck: [] }
-    });
-
-    expect(useStore.getState().importerSauvegarde(ancienne)).toEqual({ ok: true });
-    // L'id renommé par #49 est remappé par la migration, pas chargé tel quel.
-    expect(useStore.getState().owned['rh-charge-prevention']).toBe(2);
-    expect(useStore.getState().owned['rh-responsable-qvt']).toBeUndefined();
-  });
-});
-
 /** Une partie rangée minimale mais de forme valide (la forme, pas le jeu : cf. `partie.test.ts`). */
 const partieRangee = {
   mode: 'solo' as const,
@@ -917,19 +848,6 @@ describe('Partie en cours — store (#126, forme v7)', () => {
   it('garde une partie bien formée d’un état v7, et écarte une partie mal formée', () => {
     expect(migratePersisted({ partie: partieRangee }, 7).partie).toEqual(partieRangee);
     expect(migratePersisted({ partie: { mode: 'n’importe quoi' } }, 7).partie).toBeNull();
-  });
-
-  it('une sauvegarde importée sans partie ne touche pas à la partie en cours', () => {
-    useStore.getState().enregistrerPartie(partieRangee);
-    const ancienne = JSON.stringify({
-      jeu: 'bureau-des-planques',
-      version: 6,
-      etat: { name: 'Importé', owned: {}, deck: [] }
-    });
-
-    expect(useStore.getState().importerSauvegarde(ancienne)).toEqual({ ok: true });
-    expect(useStore.getState().name).toBe('Importé');
-    expect(useStore.getState().partie).toEqual(partieRangee);
   });
 
   it('« Réinitialiser la progression » efface la partie en cours', () => {
@@ -989,18 +907,6 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
       raccourcisCombat: false
     });
     expect(migratePersisted({ combatDetaille: 'oui' as unknown as boolean }, 8).combatDetaille).toBe(false);
-  });
-
-  it('relit une sauvegarde v7 : les deux réglages prennent leurs défauts', () => {
-    const ancienne = JSON.stringify({
-      jeu: 'bureau-des-planques',
-      version: 7,
-      etat: { name: 'Vétéran', owned: {}, deck: [] }
-    });
-
-    expect(useStore.getState().importerSauvegarde(ancienne)).toEqual({ ok: true });
-    expect(useStore.getState().combatDetaille).toBe(false);
-    expect(useStore.getState().raccourcisCombat).toBe(true);
   });
 
   it('un état v11 gagne les sons cochés sans rien perdre (v11 → v12)', () => {

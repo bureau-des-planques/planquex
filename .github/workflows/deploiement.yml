@@ -92,7 +92,7 @@ jobs:
         run: |
           for nom in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
             if [ -z "${!nom:-}" ]; then
-              echo "::error::Déploiement non lancé — le secret $nom est absent des secrets GitHub du dépôt. Un déploiement qui ne part pas doit se voir : pose-le (docs/INTEGRATIONS-DISCORD.md et la session infra), ne saute pas l'étape."
+              echo "::error::Déploiement non lancé — le secret $nom est absent des secrets GitHub du dépôt. Un déploiement qui ne part pas doit se voir : pose-le (runbook du dépôt planquex-infra), ne saute pas l'étape."
               exit 1
             fi
           done

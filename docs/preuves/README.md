@@ -22,6 +22,7 @@ captures de **notre** application. **Un usage, un dossier** :
 | `sorties-<AAAA-MM-JJ>/` | L'**inventaire des sorties** (#426) : chaque route, ses voies de retour, les culs-de-sac, les gestes aller/retour **mesurés** à 420 × 900 et 360 × 640, et la recherche sourcée sur trois références. Un constat, pas une correction. | `README.md` du lot (méthode §0, script `mesure-gestes.mjs`, garde `src/sorties.test.tsx`) |
 | `illustrations-<AAAA-MM-JJ>/` | Le **recensement des illustrations des bases** (#499) pour le critère 4 de D-048 : le compte vivant (bases illustrées / sans planche), la liste par faction pour découper les vagues de D-126, et l'explication de l'écart `.webp` / cartes de #546. **Pas une preuve de rendu** : une lecture de `ALL_CARDS` et du registre, sans capture. | `README.md` du lot (méthode §0, `npm run mesure:illustrations`) |
 | `combat-d193-<AAAA-MM-JJ>/` | Les **captures, planches et mesures** de la refonte du combat (D-193, #774) : table ronde zoomée, bas réservé à la main, animations, avec ce qu'elles ne prouvent pas | `npm run capturer` et `scripts/preuves/filmer-animation.mjs` |
+| `synchro-<AAAA-MM-JJ>/` | Les **captures de Réglages et de la Collection après la synchro** (#497), à 420 × 900 et 360 × 640, sur un faux compte (réseau intercepté) : pas une preuve de règle, et pas d'« avant » (la synchro est fusionnée). | `README.md` du lot (méthode, script `capturer-synchro.mjs`, ce qui n'est pas prouvé) |
 
 Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`.
 

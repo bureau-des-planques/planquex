@@ -136,7 +136,8 @@ describe('Settings — écran des Réglages', () => {
     expect(estGesteFait('sauvegarde')).toBe(false);
 
     fireEvent.click(bouton);
-    expect(estGesteFait('sauvegarde')).toBe(true);
+    // Le geste est asynchrone : l'archive se lit sur le compte avant d'être posée.
+    await waitFor(() => expect(estGesteFait('sauvegarde')).toBe(true));
   });
 
   it('affiche la section Sauvegarde', () => {
@@ -145,6 +146,16 @@ describe('Settings — écran des Réglages', () => {
     expect(screen.getByText(/Sauvegarde/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Créer ma sauvegarde/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Restaurer ce texte/i })).toBeInTheDocument();
+  });
+
+  it('dit ce que la sauvegarde restaure et ce qu’elle ne restaure pas (#495, D-202)', () => {
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const section = screen.getByRole('heading', { name: 'Sauvegarde' }).closest('section') as HTMLElement;
+    expect(section).toHaveTextContent(/sont sur ton compte/i);
+    expect(section).toHaveTextContent(/restaure tes réglages et ton Deck, jamais ta Collection/i);
+    // Le contrôle mord : l'ancien texte disait la synchro « pas livrée ».
+    expect(section).not.toHaveTextContent(/pas livrée/i);
   });
 
   it("crée une sauvegarde et l'affiche dans le textarea", async () => {

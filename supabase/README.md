@@ -560,7 +560,7 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
 - **appliquer la migration 0013** (§9, les annonces du mur dans `#comite`, #318/D-120) — **à
   faire** : elle installe `pg_cron` et `pg_net` si la base les propose (mesuré installables le
   27/10/2026), marque le passé `sans_webhook`, et **ne part pas** tant que le secret n'est pas
-  dans Vault. La procédure complète est `docs/INTEGRATIONS-DISCORD.md` §10.
+  dans Vault. La procédure complète est le runbook de `planquex-infra` ; les frontières de données sont dans `docs/INTEGRATIONS-DISCORD.md` §5.
 - **appliquer la migration 0016** (la médaille de la période d'essai, #346/D-130) — à faire
   **avant** le reset de la beta : c'est elle qui donne au reset la colonne à poser. Elle est
   idempotente et ne touche aucune ligne existante. Vérification après application :
@@ -577,7 +577,7 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
   qui ferme la médaille — la 0016 ne porte aucune ligne de droit, une révocation de colonne ne
   retirant rien (#372). La garde `supabase/comptes.test.ts` fabrique ce cas et le refuse.
 - **appliquer la migration 0017** (le résumé et les points de l'annonce, #339/D-120) — à faire
-  par le poste de pilotage, comme la 0013 (`docs/INTEGRATIONS-DISCORD.md` §10.3). Elle
+  par le poste de pilotage, comme la 0013 (runbook de `planquex-infra`). Elle
   **remplace** la phrase d'arrivée posée par 0013 : l'ancienne signature à quatre arguments est
   retirée, le déclencheur `postits_annonce_neuve` n'est pas retouché. Idempotente, aucune ligne
   existante touchée — les annonces déjà en file gardent le corps composé par 0013.
