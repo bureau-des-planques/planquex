@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
-import { marquerGeste, oublierGestes } from '@/components/journee-gestes';
+import { oublierGestes } from '@/components/journee-gestes';
 import { rejouerJournee } from '@/components/journee-etape';
-import { useEstCibleJournee } from '@/components/journee-cible';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
 import { LIBELLE_DIFFICULTE, LIBELLE_POLITIQUE, RESUME_POLITIQUE } from '@/components/difficulte';
@@ -61,8 +60,6 @@ export function Settings() {
     reset,
     setTutorielVu
   } = useStore();
-  /** Le halo de « Créer ma sauvegarde » : seulement quand la Journée est à cette étape. */
-  const cibleSauvegarde = useEstCibleJournee('sauvegarde');
   const configure = useComptes((state) => state.configure);
   const session = useComptes((state) => state.session);
   const compte = useComptes((state) => state.compte);
@@ -81,9 +78,6 @@ export function Settings() {
     const { texte, deck, collection } = await creerSauvegarde();
     setEnCours(false);
     setSauvegarde(texte);
-    // **Le geste de l'étape « Tes données »** (30/10/2026) : il n'a pas d'autre trace que
-    // celle-ci, et c'est un fait de session — le panneau de la Journée s'ouvre aussitôt.
-    marquerGeste('sauvegarde');
     // Ce que l'archive porte, dit sans promettre plus : le compte ou la copie de l'appareil.
     const origine =
       deck === 'compte' && collection === 'compte'
@@ -270,7 +264,7 @@ export function Settings() {
 
       <section className="section panel" aria-labelledby="reglages-journee">
         <h2 id="reglages-journee">Journée d’intégration</h2>
-        <p className="muted max-w-[62ch]">Cinq étapes, quatre gestes : le comité se visite.</p>
+        <p className="muted max-w-[62ch]">Quatre étapes, trois gestes : le comité se visite.</p>
         <button
           type="button"
           className="button"
@@ -278,7 +272,7 @@ export function Settings() {
             /**
              * **« Revoir » remet à zéro les gestes de session** (31/10/2026). Sans cela, la
              * réouverture affichait « C'est fait » partout : `oublierGestes` n'était appelé
-             * que par les tests. Les deux gestes du store (Arrivage, Deck) restent faits —
+             * que par les tests. Le geste du store (l'Arrivage) reste fait —
              * on ne « dé-ouvre » pas un paquet, et effacer la progression pour rejouer un
              * tutoriel serait un bug.
              *
@@ -343,14 +337,7 @@ export function Settings() {
           rows={6}
         />
         <div className="actions actions--tight">
-          <button
-            type="button"
-            className="button"
-            /* L'étape « Tes données » désigne ce bouton : le testeur repart avec sa copie. */
-            data-journee-cible={cibleSauvegarde ? 'sauvegarde' : undefined}
-            disabled={enCours}
-            onClick={creer}
-          >
+          <button type="button" className="button" disabled={enCours} onClick={creer}>
             <Copy size={16} /> Créer ma sauvegarde
           </button>
           <button type="button" className="button" onClick={restaurer} disabled={enCours || !sauvegarde.trim()}>

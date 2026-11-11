@@ -127,10 +127,10 @@ describe('le budget d’une réplique du Chef de cabinet (D-195 (2))', () => {
 });
 
 describe('les répliques du jeu passent le budget (D-195 (2), #782)', () => {
-  it('borne les cinq répliques de la Journée et les dix-neuf du combat, sans doublon', () => {
-    expect(Object.keys(REPLIQUES_JOURNEE)).toHaveLength(5);
+  it('borne les quatre répliques de la Journée et les dix-neuf du combat, sans doublon', () => {
+    expect(Object.keys(REPLIQUES_JOURNEE)).toHaveLength(4);
     expect(Object.values(REPLIQUES_DIRECTION).flat()).toHaveLength(19);
-    expect(REPLIQUES_BORNEES).toHaveLength(24);
+    expect(REPLIQUES_BORNEES).toHaveLength(23);
     expect(new Set(REPLIQUES_BORNEES).size).toBe(REPLIQUES_BORNEES.length);
   });
 

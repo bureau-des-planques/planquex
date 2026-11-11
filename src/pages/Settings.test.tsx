@@ -125,19 +125,20 @@ describe('Settings — écran des Réglages', () => {
     expect(liens[0]).toHaveAttribute('href', '/installation');
   });
 
-  it('« Créer ma sauvegarde » est le geste de l’étape「 Tes données 」(30/10/2026)', async () => {
+  it('« Créer ma sauvegarde » n’est plus un geste de la Journée (D-205 (1))', async () => {
     oublierGestes();
-    // Le halo n'apparaît que si la Journée **tient cette étape** (critique du 30/10/2026).
-    poserCibleJournee('sauvegarde');
+    // Même avec une cible posée, le bouton n'est pas désigné ; et le créer ne marque aucun geste.
+    poserCibleJournee('onglet-deck');
     renderWithStore(<Settings />, { tutorielVu: false, pasAPasCombatVu: true });
 
     const bouton = screen.getByRole('button', { name: /Créer ma sauvegarde/i });
-    expect(bouton).toHaveAttribute('data-journee-cible', 'sauvegarde');
-    expect(estGesteFait('sauvegarde')).toBe(false);
+    expect(bouton).not.toHaveAttribute('data-journee-cible');
 
     fireEvent.click(bouton);
-    // Le geste est asynchrone : l'archive se lit sur le compte avant d'être posée.
-    await waitFor(() => expect(estGesteFait('sauvegarde')).toBe(true));
+    await waitFor(() => expect(bouton).not.toBeDisabled());
+    expect(estGesteFait('deck')).toBe(false);
+    expect(estGesteFait('combat')).toBe(false);
+    poserCibleJournee(null);
   });
 
   it('affiche la section Sauvegarde', () => {

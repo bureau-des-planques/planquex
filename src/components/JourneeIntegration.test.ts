@@ -118,9 +118,10 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
     expect(composant).toMatch(/from '@\/components\/journee-etapes'/);
     expect(composant).toMatch(/ETAPES_JOURNEE/);
     expect(etapes).toMatch(/cible: '\/'/);
-    expect(etapes).toMatch(/cible: '\/deck'/);
+    expect(etapes).toMatch(/cible: '\/collection'/);
     expect(etapes).toMatch(/cible: '\/battle\?tutoriel=1&scene=fin'/);
-    expect(etapes).toMatch(/cible: '\/settings'/);
+    // **Le contrôle mord** : « Tes données » est sortie (D-205 (1)), plus aucune étape ne vise Réglages.
+    expect(etapes).not.toMatch(/cible: '\/settings'/);
     expect(etapes).toMatch(/cible: '\/comite'/);
   });
 

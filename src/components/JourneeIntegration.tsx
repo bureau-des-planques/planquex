@@ -57,9 +57,8 @@ const SELECTEUR_JOURNEE = '[data-journee-panneau], .journee__scene, .journee__vo
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
   const setTutorielVu = useStore((state) => state.setTutorielVu);
-  /** Les gestes que la Journée attend (30/10/2026) : un Arrivage ouvert, un Deck chargé. */
+  /** Le geste du store (30/10/2026) : un Arrivage ouvert. Les deux autres sont des faits de session. */
   const packsOpened = useStore((state) => state.packsOpened);
-  const deck = useStore((state) => state.deck);
   /**
    * **L'étape vit hors du panneau** (31/10/2026) : le combat la fait avancer en revenant de
    * la scène de fin, sinon « Continuer » ramenait sur Réglages à l'étape 3, avec un bouton
@@ -162,18 +161,18 @@ export function JourneeIntegration() {
   }, [ouvert]);
 
   /**
-   * La sauvegarde et le combat sont des faits de session : ils se lisent dans
+   * L'onglet Deck ouvert (D-205 (2)) et le combat sont des faits de session : ils se lisent dans
    * `journee-gestes`, pas dans le store. **Ces hooks se lisent avant tout retour
    * anticipé** : un `useSyncExternalStore` placé après `return null` change le nombre de
    * hooks quand la Journée se ferme (« Rendered fewer hooks than expected »).
    */
-  const sauvegardeFaite = useGesteFait('sauvegarde');
+  const deckVu = useGesteFait('deck');
   const combatFait = useGesteFait('combat');
 
   /**
    * **On reprend à la première étape non faite** (31/10/2026). Au rechargement, l'étape
-   * vivait en mémoire et l'on repartait à « 1/5 » avec le combat à rejouer. Les gestes du
-   * store (Arrivage, Deck) disent ce qui est déjà fait ; ceux de session disent le reste.
+   * vivait en mémoire et l'on repartait à « 1/4 » avec le combat à rejouer. Le geste du
+   * store (l'Arrivage) dit ce qui est déjà fait ; ceux de session disent le reste.
    * Une seule fois par montage : ensuite, c'est le geste validé qui fait avancer (D-196).
    */
   const repriseFaite = useRef(false);
@@ -190,12 +189,12 @@ export function JourneeIntegration() {
     }
     if (repriseFaite.current) return;
     repriseFaite.current = true;
-    const faits = [packsOpened > 0, deck.length > 0, combatFait, sauvegardeFaite];
+    const faits = [packsOpened > 0, deckVu, combatFait];
     const premiere = faits.findIndex((fait) => !fait);
-    // `faits` ne couvre que les quatre gestes : `-1` veut dire « tout est fait », et l'on
+    // `faits` ne couvre que les trois gestes : `-1` veut dire « tout est fait », et l'on
     // reste à l'étape 1. Seul un index strictement positif déplace la reprise.
     if (premiere > 0) allerAEtape(premiere);
-  }, [tutorielVu, packsOpened, deck.length, combatFait, sauvegardeFaite]);
+  }, [tutorielVu, packsOpened, deckVu, combatFait]);
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
   const cibleDeLEtape = courante.geste ? (CIBLE_DE_GESTE[courante.geste] ?? null) : null;
 
@@ -205,13 +204,7 @@ export function JourneeIntegration() {
    */
   const gesteFait =
     courante.geste === undefined ||
-    (courante.geste === 'arrivage'
-      ? packsOpened > 0
-      : courante.geste === 'deck'
-        ? deck.length > 0
-        : courante.geste === 'sauvegarde'
-          ? sauvegardeFaite
-          : combatFait);
+    (courante.geste === 'arrivage' ? packsOpened > 0 : courante.geste === 'deck' ? deckVu : combatFait);
 
   /**
    * **Le geste fait avancer** (779, D-196 (1)). Une **transition** seulement (`passeAuGeste`) :
@@ -651,9 +644,13 @@ export function JourneeIntegration() {
           {/* **La sortie monte dans l'en-tête** : elle tenait une ligne de 44 px en bas, et
             c'est elle qui interceptait le clic destiné à la cible de l'étape 1. Elle garde sa
             hauteur tactile et son libellé qui nomme ce qu'on perd (D-136). */}
-          <button type="button" className="journee__passer" onClick={terminer}>
-            {derniere ? 'Relire la Journée plus tard, depuis Réglages' : libelleSaut(etape)}
-          </button>
+          {/* **La fin n'a qu'un bouton** (D-205 (3)) : à la dernière étape, la phrase « Relire la
+            Journée plus tard » ne ferme plus rien ; la relecture reste dans Réglages. */}
+          {!derniere && (
+            <button type="button" className="journee__passer" onClick={terminer}>
+              {libelleSaut(etape)}
+            </button>
+          )}
         </div>
 
         <p id="journee-texte" className="journee__texte">
@@ -683,7 +680,19 @@ export function JourneeIntegration() {
           {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
             place au geste lui-même. Et sans geste, il n'y a rien à montrer. Il n'y a pas de
             bouton « Suivant » (D-196) : le geste validé fait avancer, le tap fait le reste. */}
-          {!surLaPage ? (
+          {derniere ? (
+            /* **Le seul bouton de la fin** (D-205 (3)) : il ferme la Journée et ouvre le comité. */
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => {
+                terminer();
+                navigate(courante.cible);
+              }}
+            >
+              {courante.action}
+            </button>
+          ) : !surLaPage ? (
             <button
               type="button"
               className="button button--primary"

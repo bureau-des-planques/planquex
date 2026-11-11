@@ -21,12 +21,12 @@ describe('la cible de la Journée', () => {
   it('n’a qu’une valeur à la fois', () => {
     poserCibleJournee('arrivage');
     expect(cibleJournee()).toBe('arrivage');
-    poserCibleJournee('decks-proposes');
-    expect(cibleJournee()).toBe('decks-proposes');
+    poserCibleJournee('onglet-deck');
+    expect(cibleJournee()).toBe('onglet-deck');
   });
 
   it('s’éteint quand la Journée se ferme', () => {
-    poserCibleJournee('sauvegarde');
+    poserCibleJournee('onglet-deck');
     poserCibleJournee(null);
     // **Le contrôle mord** : une cible qui resterait posée laisserait un halo orphelin.
     expect(cibleJournee()).toBeNull();
@@ -36,17 +36,16 @@ describe('la cible de la Journée', () => {
 /**
  * **Une correspondance par geste** (D-160 (3), D-162 (3)). `combat` n'a volontairement **pas**
  * de cible : sur `/battle` le panneau s'efface et le pas-à-pas désigne. Le test exige donc
- * exactement les trois gestes à halo, et `combat` absent.
+ * exactement les deux gestes à halo, et `combat` absent.
  */
 describe('CIBLE_DE_GESTE couvre exactement les gestes à halo', () => {
-  it('a les trois gestes attendus, avec leur cible, et pas combat', () => {
+  it('a les deux gestes attendus, avec leur cible, et pas combat', () => {
     // **Le contrôle mord** : `combat: 'arrivage'` ajouté au `Partial` fait tomber cette assertion,
     // et un halo sur `/battle` redésignerait une cible que le pas-à-pas remplace.
-    expect(Object.keys(CIBLE_DE_GESTE).sort()).toEqual(['arrivage', 'deck', 'sauvegarde']);
+    expect(Object.keys(CIBLE_DE_GESTE).sort()).toEqual(['arrivage', 'deck']);
     expect(CIBLE_DE_GESTE).toEqual({
       arrivage: 'arrivage',
-      deck: 'decks-proposes',
-      sauvegarde: 'sauvegarde'
+      deck: 'onglet-deck'
     });
     expect(CIBLE_DE_GESTE).not.toHaveProperty('combat');
   });
@@ -90,7 +89,7 @@ describe('la cible suit l’étape et s’éteint à la fermeture', () => {
       deck: ['atelier-joueur-de-flute']
     });
     oublierGestes();
-    marquerGeste('sauvegarde');
+    marquerGeste('deck');
     marquerGeste('combat');
     remettreJourneeAuDebut();
     allerAEtape(index);
@@ -99,18 +98,18 @@ describe('la cible suit l’étape et s’éteint à la fermeture', () => {
     );
   }
 
-  it('désigne la cible de l’étape Collection et Deck, puis l’efface quand la Journée se ferme', () => {
+  it('désigne l’onglet Deck à l’étape Collection et Deck, puis l’efface quand la Journée se ferme', () => {
     const ecran = monter(1);
-    expect(cibleJournee()).toBe('decks-proposes');
+    expect(cibleJournee()).toBe('onglet-deck');
     // **Le contrôle mord** : sans `poserCibleJournee(null)` dans le nettoyage, la cible
-    // survit au démontage et le volet des Decks reste cerclé hors de la Journée.
+    // survit au démontage et l’onglet Deck reste cerclé hors de la Journée.
     act(() => ecran.unmount());
     expect(cibleJournee()).toBeNull();
   });
 
   it('s’éteint quand l’étape passe à une étape sans geste à halo (le combat)', () => {
     const ecran = monter(1);
-    expect(cibleJournee()).toBe('decks-proposes');
+    expect(cibleJournee()).toBe('onglet-deck');
     act(() => allerAEtape(2));
     expect(cibleJournee()).toBeNull();
     act(() => ecran.unmount());

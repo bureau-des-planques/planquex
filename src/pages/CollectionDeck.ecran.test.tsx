@@ -7,6 +7,7 @@ import { attendreEcran, rendreApplication } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { deckLegal } from '@/game/deck';
 import { DECKS_PROPOSES } from '@/data/decks-proposes';
+import { estGesteFait, oublierGestes } from '@/components/journee-gestes';
 
 /**
  * **Un écran, deux onglets** (#545) : la Collection et le Deck sont deux métiers, servis par
@@ -49,6 +50,18 @@ describe('Collection et Deck — un seul écran, deux onglets (#545)', () => {
     // Le contenu est celui du Deck : ses contraintes, et jamais la jauge de la Collection.
     expect(screen.getByRole('heading', { name: /Ce que le Deck doit respecter/i })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /cartes tirables/ })).toBeNull();
+  });
+
+  it('ouvrir l’onglet Deck marque le geste de la Journée ; la Collection seule ne le marque pas (D-205 (2))', async () => {
+    oublierGestes();
+    await rendreApplication({ chemin: '/collection' });
+    await attendreEcran(/cartes tirables/);
+    // **Le contrôle mord** : le marquer à l'arrivée sur la Collection validerait l'étape trop tôt.
+    expect(estGesteFait('deck')).toBe(false);
+    await userEvent.click(within(onglets()).getByRole('link', { name: 'Deck' }));
+    await attendreEcran(/Ce que le Deck doit respecter/);
+    expect(estGesteFait('deck')).toBe(true);
+    oublierGestes();
   });
 
   it('la barre du bas a cinq entrées (D-192), et garde les Cartes allumées sur les deux routes', async () => {

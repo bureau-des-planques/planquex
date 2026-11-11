@@ -485,8 +485,9 @@ export const MUTATIONS = [
     fichier: 'src/components/journee-etapes.ts',
     // D-181 (5), D-196 : le geste validé avance l'étape **et ouvre l'écran de l'étape suivante**.
     // La mutation décale la cible d'un cran ; le test de rendu doit voir que le contenu du
-    // panneau (le Deck) et l'écran affiché (l'accueil) ne disent plus la même chose.
-    motif: "    cible: '/deck',",
+    // panneau (la Collection et le Deck) et l'écran affiché (l'accueil) ne disent plus la même chose.
+    // Réancré le 11/11/2026 (D-205 (2)) : l'étape s'ouvre sur `/collection`, onglet Deck désigné.
+    motif: "    cible: '/collection',",
     remplacement: "    cible: '/',",
     tests: ['src/components/JourneeIntegration.ecran.test.tsx'],
     garde:

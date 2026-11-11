@@ -27,7 +27,7 @@ const source = readFileSync(resolve(racine, 'src/store/useStore.ts'), 'utf8');
 const plan = planDeLaJournee(ETAPES_JOURNEE, CIBLE_DE_GESTE, cheminDeCible);
 
 describe('le plan du parcours — lu dans le code, pas recopié', () => {
-  it('suit les cinq étapes de ETAPES_JOURNEE, dans leur ordre, avec leurs routes', () => {
+  it('suit les quatre étapes de ETAPES_JOURNEE, dans leur ordre, avec leurs routes', () => {
     expect(plan).toHaveLength(ETAPES_JOURNEE.length);
     expect(plan.map((etape) => etape.chemin)).toEqual(ETAPES_JOURNEE.map((etape) => cheminDeCible(etape.cible)));
     expect(plan.map((etape) => etape.geste)).toEqual(ETAPES_JOURNEE.map((etape) => etape.geste ?? null));
@@ -41,7 +41,7 @@ describe('le plan du parcours — lu dans le code, pas recopié', () => {
 
   it('**le contrôle mord** : un geste sans parcours fait échouer le plan, en nommant l’étape', () => {
     const fautif = [{ ...plan[0], geste: 'inconnu' as never }];
-    expect(() => verifierPlan(fautif)).toThrow(/Étape « L’Arrivage » \(1\/5\) : geste « inconnu »/);
+    expect(() => verifierPlan(fautif)).toThrow(/Étape « L’Arrivage » \(1\/4\) : geste « inconnu »/);
   });
 });
 
@@ -70,27 +70,27 @@ describe('les vérifications d’écran — une étape non conforme échoue par 
   const etape = plan[1];
 
   it('accepte la route, le titre et la cible de l’étape', () => {
-    expect(() => verifierRoute(etape, '/deck')).not.toThrow();
-    expect(() => verifierTitre(etape, '2/5 Journée d’intégration — étape 2 sur 5 : La Collection et le Deck')).not.toThrow();
+    expect(() => verifierRoute(etape, '/collection')).not.toThrow();
+    expect(() =>
+      verifierTitre(etape, '2/4 Journée d’intégration — étape 2 sur 4 : La Collection et le Deck')
+    ).not.toThrow();
     expect(() => verifierCible(etape, true)).not.toThrow();
   });
 
   it('**le contrôle mord** : une route inattendue échoue en nommant l’étape et les deux chemins', () => {
     expect(() => verifierRoute(etape, '/settings')).toThrow(
-      /Étape « La Collection et le Deck » \(2\/5\) : route inattendue : attendu « \/deck », reçu « \/settings »/
+      /Étape « La Collection et le Deck » \(2\/4\) : route inattendue : attendu « \/collection », reçu « \/settings »/
     );
   });
 
   it('**le contrôle mord** : un écran qui affiche une autre étape échoue, sans la laisser passer', () => {
-    expect(() => verifierTitre(etape, '1/5 Journée d’intégration — étape 1 sur 5 : L’Arrivage')).toThrow(
-      /Étape « La Collection et le Deck » \(2\/5\) : le panneau affiche/
+    expect(() => verifierTitre(etape, '1/4 Journée d’intégration — étape 1 sur 4 : L’Arrivage')).toThrow(
+      /Étape « La Collection et le Deck » \(2\/4\) : le panneau affiche/
     );
   });
 
   it('**le contrôle mord** : une cible absente échoue, avec son sélecteur', () => {
-    expect(() => verifierCible(etape, false)).toThrow(
-      /cible absente : \[data-journee-cible="decks-proposes"\]/
-    );
+    expect(() => verifierCible(etape, false)).toThrow(/cible absente : \[data-journee-cible="onglet-deck"\]/);
   });
 
   it('une étape sans cible ne demande rien au DOM', () => {
@@ -98,7 +98,7 @@ describe('les vérifications d’écran — une étape non conforme échoue par 
   });
 
   it('erreurEtape nomme toujours l’étape, en tête du message', () => {
-    expect(erreurEtape(plan[4], 'x').message.startsWith('Étape « Le comité » (5/5) : ')).toBe(true);
+    expect(erreurEtape(plan[3], 'x').message.startsWith('Étape « Le comité » (4/4) : ')).toBe(true);
   });
 });
 
@@ -131,14 +131,14 @@ describe('le parcours, sans navigateur — les cas d’erreur nomment l’étape
       }
     });
     await expect(parcourirFactice(options(page))).rejects.toThrow(
-      /Étape « L’Arrivage » \(1\/5\) : net::ERR_CONNECTION_REFUSED/
+      /Étape « L’Arrivage » \(1\/4\) : net::ERR_CONNECTION_REFUSED/
     );
   });
 
   it('**le contrôle mord** : une route réelle inattendue sort avec le nom de l’étape', async () => {
     const page = pageFactice({ url: () => 'http://localhost:4196/settings' });
     await expect(parcourirFactice(options(page))).rejects.toThrow(
-      /Étape « L’Arrivage » \(1\/5\) : route inattendue : attendu « \/ », reçu « \/settings »/
+      /Étape « L’Arrivage » \(1\/4\) : route inattendue : attendu « \/ », reçu « \/settings »/
     );
   });
 });

@@ -2,7 +2,7 @@
 /**
  * Parcours automatisé de la Journée d'intégration (#686) — une preuve de rendu.
  *
- * Le banc joue les cinq étapes de `ETAPES_JOURNEE` dans un vrai Chromium, sur le build
+ * Le banc joue les quatre étapes de `ETAPES_JOURNEE` dans un vrai Chromium, sur le build
  * (`dist/`), par leurs **routes** et leurs **gestes** réels : il ne lit aucun état de
  * l'application pour agir, il clique. Pour chaque étape il vérifie que l'écran affiché est
  * celui qu'elle décrit (titre du panneau, route, cible présente), joue le geste, prend une
@@ -45,7 +45,7 @@ const DOSSIER_PAR_DEFAUT = join(tmpdir(), 'planquex-parcours-journee');
  * Les gestes que le banc sait jouer. Un geste de `ETAPES_JOURNEE` absent d'ici fait échouer
  * le plan (`verifierPlan`), au lieu d'être sauté en silence.
  */
-export const GESTES_JOUES = Object.freeze(['arrivage', 'deck', 'combat', 'sauvegarde']);
+export const GESTES_JOUES = Object.freeze(['arrivage', 'deck', 'combat']);
 
 /**
  * La version du store, lue **à la source** (`STORAGE_VERSION`, `src/store/useStore.ts`).
@@ -251,7 +251,7 @@ async function cibleAttendue(page, etape) {
 
 /**
  * Le geste est validé : la Journée avance seule (D-196), et son compteur passe à l'étape
- * suivante (« 2/5 » après l'étape 1). On attend ce compteur, pas un bouton qui n'existe plus.
+ * suivante (« 2/4 » après l'étape 1). On attend ce compteur, pas un bouton qui n'existe plus.
  */
 async function attendreGesteFait(page, etape) {
   await page
@@ -272,14 +272,8 @@ const GESTES = {
     await attendreGesteFait(page, etape);
   },
   async deck(page, etape) {
-    await page
-      .locator('[data-journee-cible="decks-proposes"] button', { hasText: /^Charger$/ })
-      .first()
-      .click();
-    await attendreGesteFait(page, etape);
-  },
-  async sauvegarde(page, etape) {
-    await page.getByRole('button', { name: 'Créer ma sauvegarde', exact: true }).click();
+    // D-205 (2) : le geste est d'ouvrir l'onglet Deck (la cible est le lien de l'onglet).
+    await page.locator('[data-journee-cible="onglet-deck"]').click();
     await attendreGesteFait(page, etape);
   },
   /** La fin scriptée (`?scene=fin`) : une Pression suffit, la Journée se valide à la scène de fin. */

@@ -86,12 +86,12 @@ export const REPLIQUES_DIRECTION: Record<EvenementDirection, readonly string[]> 
 export const REPLIQUES_JOURNEE = {
   arrivage:
     'Ouvre ton premier Arrivage : cinq cartes, choisies pour toi par personne. La Direction appelle ça une surprise, le service achats appelle ça un reliquat. Tu feras la grimace, c’est prévu dans le planning.',
+  // **Texte provisoire** (D-205 (2), O-017) : l'ancienne annonce demandait de charger un Deck, ce
+  // n'est plus le geste. Trois variantes sont proposées dans le rapport du #805 ; le propriétaire tranche.
   collectionDeck:
-    'Charge un Deck proposé, vingt cartes, déjà comptées par la Direction. Tu les trouveras trop nombreuses, c’est normal. Un Deck, c’est un organigramme : tout le monde y figure, personne ne sait vraiment pourquoi.',
+    'Ouvre l’onglet Deck : vingt cartes, déjà comptées par la Direction, et des Decks proposés pour t’éviter d’en choisir. Un Deck, c’est un organigramme : tout le monde y figure, personne ne sait pourquoi.',
   combat:
     'Le combat guidé te tient la main, c’est rassurant. Trois Interventions suffisent pour gagner, mais la Direction a déjà rédigé le compte rendu de ta défaite.',
-  donnees:
-    'Tu joues depuis dix minutes sans rien sauvegarder, comme une réunion sans compte rendu. Crée ta sauvegarde maintenant : si le navigateur vide sa mémoire, la Direction n’aura rien à archiver.',
   /** La dernière étape : c'est elle qui porte la **phrase de fin** de la Journée (D-195 (5)). */
   comite:
     'Colle un post-it, IP pour une idée, OUF pour un défaut : ce sera ta première contribution au débat. Le mur ne lit rien, mais il archive tout. La Journée est finie, le travail commence.'

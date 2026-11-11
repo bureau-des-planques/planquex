@@ -1,5 +1,8 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { CartesJournee } from '@/components/CartesJournee';
+import { useEstCibleJournee } from '@/components/journee-cible';
+import { marquerGeste } from '@/components/journee-gestes';
 import { RepliChargement } from '@/components/RepliChargement';
 
 /**
@@ -39,6 +42,18 @@ const ONGLETS = [
 ] as const satisfies ReadonlyArray<{ onglet: OngletCartes; to: string; label: string }>;
 
 export function CollectionDeck({ onglet }: { onglet: OngletCartes }) {
+  /**
+   * **Le geste de l'étape « La Collection et le Deck »** (D-205 (2), 11/11/2026) : **ouvrir
+   * l'onglet Deck**. La visite le valide ; charger un Deck ne le valide plus. C'est un fait de
+   * session (`journee-gestes`), marqué ici parce que ce shell est le seul à connaître l'onglet.
+   * La Journée désigne l'onglet Deck par `data-journee-cible`, et montre les cartes drôles du
+   * set sur l'onglet Collection pendant l'étape (elles vivaient dans le volet des Decks proposés).
+   */
+  const cibleOngletDeck = useEstCibleJournee('onglet-deck');
+  useEffect(() => {
+    if (onglet === 'deck') marquerGeste('deck');
+  }, [onglet]);
+
   return (
     <div className="page">
       <nav aria-label="Collection et Deck" className="flex flex-wrap gap-2 border-b border-line pb-2">
@@ -47,6 +62,7 @@ export function CollectionDeck({ onglet }: { onglet: OngletCartes }) {
             key={choix.to}
             to={choix.to}
             end
+            data-journee-cible={cibleOngletDeck && choix.onglet === 'deck' ? 'onglet-deck' : undefined}
             aria-label={choix.label}
             className={({ isActive }) =>
               `inline-flex min-h-11 items-center rounded-[var(--radius-sm)] px-3 py-1.5 text-[0.86rem] no-underline transition-colors ${
@@ -60,6 +76,8 @@ export function CollectionDeck({ onglet }: { onglet: OngletCartes }) {
           </NavLink>
         ))}
       </nav>
+
+      {cibleOngletDeck && onglet === 'collection' && <CartesJournee />}
 
       {/* Le repli porte `.repli-chargement` : `attendreEcran` (tests d'écran) attend que le
           contenu de l'onglet soit monté, pas seulement la coquille. */}

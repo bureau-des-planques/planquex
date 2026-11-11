@@ -3,9 +3,8 @@ import { REPLIQUES_JOURNEE } from '@/data/repliques-direction';
 /**
  * Les étapes de la « Journée d'intégration » (#130, D-066 ; refonte du 30/10/2026).
  *
- * **Cinq étapes, zéro recouvrement avec le pas-à-pas du combat.** La Journée couvre ce
- * qui existe **hors** du combat — l'Arrivage, la Collection et le Deck, les données du
- * navigateur, le comité — et elle **remet le combat** à son propre tutoriel : le
+ * **Quatre étapes (D-205 (1), 11/11/2026 : « Tes données » sort), zéro recouvrement avec le pas-à-pas du combat.** La Journée couvre ce
+ * qui existe **hors** du combat — l'Arrivage, la Collection et le Deck, le comité — et elle **remet le combat** à son propre tutoriel : le
  * pas-à-pas, qui parle du Poste, du café, de la Pression et de la fin là où ces mots
  * veulent dire quelque chose (30/10/2026, décision D-160).
  *
@@ -32,10 +31,10 @@ export interface EtapeJournee {
   /**
    * Le **geste réel** que l'étape exige avant de passer à la suivante (30/10/2026).
    * Sans lui, la Journée se lisait : « ouvre un Arrivage » était un conseil, pas une
-   * étape. `arrivage` attend un Arrivage ouvert (`packsOpened`), `deck` attend un Deck
-   * chargé (`deck.length`).
+   * étape. `arrivage` attend un Arrivage ouvert (`packsOpened`), `deck` attend la **visite de
+   * l'onglet Deck** (D-205 (2) : charger un Deck n'est plus le geste), `combat` la scène de fin.
    */
-  readonly geste?: 'arrivage' | 'deck' | 'sauvegarde' | 'combat';
+  readonly geste?: 'arrivage' | 'deck' | 'combat';
   /**
    * **La Direction accueille le nouveau** (31/10/2026, copie validée par Bastien). Une
    * ligne, provocante, dans la voix du produit : les cinq textes d'étape sont justes mais
@@ -65,13 +64,13 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     titre: 'La Collection et le Deck',
     /**
      * **La page unifiée « Cartes » (D-175, #545)** : Collection et Deck sont deux onglets
-     * d'un même écran. L'étape vise `/deck` parce que le geste est de **charger** un Deck,
-     * et `/collection` reste une adresse valide de l'autre onglet — elle n'est ni obsolète
-     * ni redirigée (D-175 (2)).
+     * d'un même écran. L'étape s'ouvre sur `/collection` parce que le geste est d'**ouvrir
+     * l'onglet Deck** (D-205 (2)) : sur `/deck`, la visite validerait l'étape avant que le
+     * testeur ait lu la réplique. `/deck` reste une adresse valide (D-175 (2)).
      */
-    texte: 'Charge un Deck proposé, vingt cartes.',
-    cible: '/deck',
-    action: 'Aller au Deck',
+    texte: 'Ouvre l’onglet Deck.',
+    cible: '/collection',
+    action: 'Aller à la Collection',
     geste: 'deck',
     montreCartes: true,
     direction: REPLIQUES_JOURNEE.collectionDeck
@@ -88,18 +87,11 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     geste: 'combat'
   },
   {
-    titre: 'Tes données',
-    texte: 'Crée ta sauvegarde dans Réglages, ta seule copie.',
-    cible: '/settings',
-    action: 'Aller aux réglages',
-    geste: 'sauvegarde',
-    direction: REPLIQUES_JOURNEE.donnees
-  },
-  {
     titre: 'Le comité',
     texte: 'Colle un post-it IP ou OUF.',
     cible: '/comite',
-    action: 'Voir le comité',
+    // **Le seul bouton de la fin** (D-205 (3)) : il ferme la Journée et ouvre le comité.
+    action: 'Aller au comité',
     direction: REPLIQUES_JOURNEE.comite
   }
 ];
@@ -180,8 +172,8 @@ export function tapeAvance(etape: EtapeJournee, index: number, dernier: number):
 
 /**
  * **Le tap sur la dernière réplique termine la Journée** (779, décision du propriétaire du
- * 10/11/2026). Seule la dernière étape sans geste le fait : le même effet que « Relire la
- * Journée plus tard », qui reste à l'écran.
+ * 10/11/2026). Seule la dernière étape sans geste le fait : le même effet que le bouton de fin
+ * (« Aller au comité », D-205 (3)).
  */
 export function tapeTermine(etape: EtapeJournee, index: number, dernier: number): boolean {
   return etape.geste === undefined && index >= dernier;
@@ -212,9 +204,9 @@ export const LOCUTEUR_JOURNEE = 'Chef de cabinet';
 /**
  * **Le budget de texte de la Journée** (D-195 (2), 10/11/2026 ; amende D-181 (3)) : chaque
  * réplique fait 1 à 3 phrases et 25 à 35 mots, bornes dans `src/data/repliques-direction.ts`,
- * et la Journée entière — titre, texte, libellé du geste et réplique des cinq étapes — se lit
+ * et la Journée entière — titre, texte, libellé du geste et réplique des quatre étapes — se lit
  * en **90 s au plus** avant la première action. L'ancien plafond de ≈ 60 mots rendus (54 à 66,
- * D-181 (3)) ne peut pas tenir avec cinq répliques de 25 mots : il tombe avec D-195 (2), et le
+ * D-181 (3)) ne peut pas tenir avec des répliques de 25 mots : il tombe avec D-195 (2), et le
  * budget total reste à confirmer (D-195 (5)). Le test d'écran mesure le DOM ; ces constantes
  * fixent le plafond.
  */
@@ -234,9 +226,10 @@ export const MOTS_PAR_MINUTE = 180;
  */
 export function ligneAideGeste(etape: EtapeJournee): string | null {
   if (etape.geste === undefined) return null;
+  // **Tient sur une ligne à 420 px** (D-205 (4), #788) : le texte est court, mesuré sur capture.
   return etape.geste === 'combat'
-    ? 'Joue le combat guidé : l’étape suivante s’ouvrira à sa fin.'
-    : 'Fais le geste sur la page : l’étape suivante s’ouvrira ensuite.';
+    ? 'Joue le combat, l’étape suivante s’ouvrira'
+    : 'Fais le geste, l’étape suivante s’ouvrira';
 }
 
 /**

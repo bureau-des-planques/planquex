@@ -55,22 +55,31 @@ function routeDeclaree(cible: string): boolean {
   return new RegExp(`path="${chemin.replace(/^\//, '')}"`).test(app);
 }
 
-describe('cinq étapes, et plus de recouvrement avec le combat (30/10/2026)', () => {
-  it('tient en cinq étapes, dans l’ordre du parcours', () => {
+describe('quatre étapes, et plus de recouvrement avec le combat (30/10/2026, D-205 (1))', () => {
+  it('tient en quatre étapes, dans l’ordre du parcours', () => {
+    // **Le contrôle mord** : la cinquième étape, « Tes données », est le cas fautif (D-205 (1)).
+    expect(ETAPES_JOURNEE).toHaveLength(4);
     expect(ETAPES_JOURNEE.map((etape) => etape.titre)).toEqual([
       'L’Arrivage',
       'La Collection et le Deck',
       'Le combat',
-      'Tes données',
       'Le comité'
     ]);
+  });
+
+  it('ne garde aucune trace du geste « sauvegarde » ni de la route /settings (D-205 (1))', () => {
+    for (const etape of ETAPES_JOURNEE) {
+      expect(etape.geste as string | undefined, etape.titre).not.toBe('sauvegarde');
+      expect(etape.cible, etape.titre).not.toMatch(/settings/);
+    }
+    expect(ETAPES_JOURNEE.map((etape) => etape.titre)).not.toContain('Tes données');
   });
 
   it('ne réexplique pas le combat : elle le remet à son propre tutoriel', () => {
     // Les trois étapes retirées parlaient du Seuil, de la fin d'un combat et du tour de
     // jeu. Une ligne qui les ramènerait ailleurs ferait revivre le doublon : seule l'étape
     // du combat a le droit de nommer ses mots, et seulement pour renvoyer au tutoriel.
-    const horsCombat = [0, 1, 3, 4].map((index) => texteDe(index)).join(' ');
+    const horsCombat = [0, 1, 3].map((index) => texteDe(index)).join(' ');
     expect(horsCombat).not.toMatch(/Seuil/);
     expect(horsCombat).not.toMatch(/\bcafé\b/);
     expect(horsCombat).not.toMatch(/Conditions/);
@@ -87,22 +96,19 @@ describe('cinq étapes, et plus de recouvrement avec le combat (30/10/2026)', ()
     expect(texteDe(0)).toMatch(/Ouvre/);
   });
 
-  it('réunit Collection et Deck, et fait charger un Deck proposé', () => {
+  it('réunit Collection et Deck, et fait ouvrir l’onglet Deck (D-205 (2))', () => {
     expect(texteDe(1)).toMatch(/Collection/);
     expect(texteDe(1)).toMatch(/Deck/);
-    expect(texteDe(1)).toMatch(/Charge/);
-    expect(texteDe(1)).toMatch(/Deck proposé/);
-  });
-
-  it('dit de créer la sauvegarde, seule copie des données', () => {
-    expect(texteDe(3)).toMatch(/Crée/);
-    expect(texteDe(3)).toMatch(/sauvegarde/);
+    expect(texteDe(1)).toMatch(/Ouvre l’onglet Deck/);
+    // **Le contrôle mord** : charger un Deck n'est plus le geste, et le geste est la visite.
+    expect(texteDe(1)).not.toMatch(/Charge/);
+    expect(ETAPES_JOURNEE[1].geste).toBe('deck');
   });
 
   it('nomme les deux post-its du comité', () => {
-    expect(texteDe(4)).toMatch(/comité/);
-    expect(texteDe(4)).toMatch(/IP/);
-    expect(texteDe(4)).toMatch(/OUF/);
+    expect(texteDe(3)).toMatch(/comité/);
+    expect(texteDe(3)).toMatch(/IP/);
+    expect(texteDe(3)).toMatch(/OUF/);
   });
 });
 
@@ -158,7 +164,7 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
     // l'accueil, et c'est l'Arrivage qu'elle nomme.
     expect(texteDe(0)).toMatch(/Arrivage/);
     expect(texteDe(1)).toMatch(/Deck/);
-    expect(texteDe(4)).toMatch(/comité/);
+    expect(texteDe(3)).toMatch(/comité/);
   });
 });
 
@@ -181,7 +187,7 @@ describe('l’étape d’un geste se lit dans les données, jamais dans un numé
 
   it('relie chaque écran à son étape par le chemin, sans la requête (D-162 (4))', () => {
     expect(etapePourChemin('/')).toBe(0);
-    expect(etapePourChemin('/deck')).toBe(1);
+    expect(etapePourChemin('/collection')).toBe(1);
     // La cible du combat porte une requête (`?tutoriel=1&scene=fin`) : le chemin la retrouve.
     expect(etapePourChemin('/battle')).toBe(2);
     expect(etapePourChemin('/inconnu')).toBe(-1);
@@ -216,7 +222,6 @@ describe('deux phrases au plus et un seul geste par étape (D-136)', () => {
     // Passé le combat, il n'y a plus que la fin du parcours à perdre.
     expect(libelleSaut(3)).toMatch(/terminer/i);
     expect(libelleSaut(3)).not.toMatch(/combat/i);
-    expect(libelleSaut(4)).toMatch(/terminer/i);
   });
 });
 
@@ -337,7 +342,17 @@ describe('l’écriture de la réplique suit les mots : 60 ms par mot, 3 s au pl
   });
 });
 
-describe('la ligne d’aide du geste compte dans la lecture (D-198 (6), #788)', () => {
+describe('la ligne d’aide du geste compte dans la lecture et tient sur une ligne (D-198 (6), D-205 (4), #788)', () => {
+  it('est courte : une ligne à 420 px, 45 caractères au plus (mesurée sur capture, voir l’écran)', () => {
+    for (const etape of ETAPES_JOURNEE) {
+      const ligne = ligneAideGeste(etape);
+      // **Le contrôle mord** : l'ancienne phrase (« … sur la page : l’étape suivante s’ouvrira
+      // ensuite », 63 caractères) passait sur deux lignes à 420 px.
+      if (ligne !== null) expect(ligne.length, etape.titre).toBeLessThanOrEqual(45);
+    }
+    expect('Fais le geste sur la page : l’étape suivante s’ouvrira ensuite.'.length).toBeGreaterThan(45);
+  });
+
   it('une étape avec geste a une ligne d’aide, une étape sans geste n’en a aucune', () => {
     for (const etape of ETAPES_JOURNEE) {
       if (etape.geste === undefined) expect(ligneAideGeste(etape), etape.titre).toBeNull();
@@ -363,7 +378,7 @@ describe('la Journée se lit en 90 s au plus avant la première action (D-195 (2
   });
 
   it('tient sous 90 s à 180 mots par minute (la mesure du dépôt) et à 200 (la mesure du ticket)', () => {
-    // La somme des titres, textes, libellés de geste et répliques des cinq étapes. Le ticket
+    // La somme des titres, textes, libellés de geste et répliques des quatre étapes. Le ticket
     // #782 demande la mesure à 200 mots/min ; le dépôt lit à `MOTS_PAR_MINUTE` (180), plus
     // sévère : les deux doivent passer.
     expect(secondesDeLaJournee(ETAPES_JOURNEE, MOTS_PAR_MINUTE)).toBeLessThanOrEqual(SECONDES_MAX_JOURNEE);
@@ -371,8 +386,8 @@ describe('la Journée se lit en 90 s au plus avant la première action (D-195 (2
     expect(secondesDeLaJournee()).toBe(secondesDeLaJournee(ETAPES_JOURNEE, MOTS_PAR_MINUTE));
   });
 
-  it('le contrôle mord : cinq répliques de 60 mots dépassent le plafond, aux deux vitesses', () => {
-    const soixante = `${Array.from({ length: 60 }, () => 'mot').join(' ')}.`;
+  it('le contrôle mord : des répliques de 70 mots dépassent le plafond, aux deux vitesses', () => {
+    const soixante = `${Array.from({ length: 70 }, () => 'mot').join(' ')}.`;
     const bavarde = ETAPES_JOURNEE.map((etape) => ({ ...etape, direction: soixante }));
     expect(secondesDeLaJournee(bavarde, MOTS_PAR_MINUTE)).toBeGreaterThan(SECONDES_MAX_JOURNEE);
     expect(secondesDeLaJournee(bavarde, 200)).toBeGreaterThan(SECONDES_MAX_JOURNEE);
@@ -393,21 +408,21 @@ describe('le geste fait avancer, et le tap ne passe que les étapes sans geste (
   it('tapeAvance : une étape sans geste, et pas la dernière', () => {
     const sansGeste = { titre: 'x', texte: 'x', cible: '/', action: 'x', direction: 'x' };
     const avecGeste = { ...sansGeste, geste: 'arrivage' as const };
-    expect(tapeAvance(sansGeste, 0, 4)).toBe(true);
+    expect(tapeAvance(sansGeste, 0, 3)).toBe(true);
     // **Le contrôle mord** : une étape avec geste n'avance jamais au tap.
-    expect(tapeAvance(avecGeste, 0, 4)).toBe(false);
+    expect(tapeAvance(avecGeste, 0, 3)).toBe(false);
     // La dernière étape n'a pas d'étape après elle.
-    expect(tapeAvance(sansGeste, 4, 4)).toBe(false);
+    expect(tapeAvance(sansGeste, 3, 3)).toBe(false);
   });
 
   it('tapeTermine : seulement la dernière étape sans geste termine la Journée', () => {
     const sansGeste = { titre: 'x', texte: 'x', cible: '/', action: 'x', direction: 'x' };
     const avecGeste = { ...sansGeste, geste: 'deck' as const };
-    expect(tapeTermine(sansGeste, 4, 4)).toBe(true);
+    expect(tapeTermine(sansGeste, 3, 3)).toBe(true);
     // **Le contrôle mord** : une étape avec geste ne termine jamais au tap.
-    expect(tapeTermine(avecGeste, 4, 4)).toBe(false);
+    expect(tapeTermine(avecGeste, 3, 3)).toBe(false);
     // **Le contrôle mord** : une étape sans geste qui n'est pas la dernière ne termine pas.
-    expect(tapeTermine(sansGeste, 3, 4)).toBe(false);
+    expect(tapeTermine(sansGeste, 2, 3)).toBe(false);
   });
 
   it('chaque étape du parcours a un geste, sauf la dernière (le comité)', () => {
