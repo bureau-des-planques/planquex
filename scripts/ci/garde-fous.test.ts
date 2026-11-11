@@ -74,6 +74,8 @@ const TICKETS_ATTENDUS = [
   // #672 (D-184, remplace #667) : cartes entre le dos et la face avant ; deux mutations
   // prouvent que le test mord si l’ordre dos < cartes < face avant est rompu d’un côté ou de l’autre.
   672, 672,
+  // #738 (D-183) : la migration v19 retire `derniere` — une sauvegarde v18 ne la remet pas dans l'état.
+  738,
   // #742 : le journal visuel est retiré ; l'annonce sr-only (`aria-live`) reste la seule voix du dernier coup.
   742,
   // #778 (D-194, D-195) : la tête d'un tiers d'écran, le fond inerte, jamais d'`aria-modal`, la

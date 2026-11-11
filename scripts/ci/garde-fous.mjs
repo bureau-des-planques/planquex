@@ -476,7 +476,8 @@ export const MUTATIONS = [
     motif: 'const { rng: _ancienGenerateur, derniere: _ancienneDerniere, ...sansGenerateur } = state;',
     remplacement: 'const { rng: _ancienGenerateur, ...sansGenerateur } = state;',
     tests: ['src/store/useStore.test.ts'],
-    garde: 'la dernière partie d’une sauvegarde v18 resterait dans le store, alors que « Revoir une partie » est retiré (D-183)'
+    garde:
+      'la dernière partie d’une sauvegarde v18 resterait dans le store, alors que « Revoir une partie » est retiré (D-183)'
   },
   {
     ticket: 666,
