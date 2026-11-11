@@ -9,14 +9,12 @@ jamais déployé, et il ne peut pas être atteint depuis le réseau.
 
 ## Ce qu'il fait
 
-- **État de l'alpha** : comptes par état (dont les approbations en attente), parties terminées
-  et leur poids moyen, post-its par statut, volume de la base. Les courriels sont **masqués**
+- **État de l'alpha** : comptes par état (dont les approbations en attente), post-its par statut, volume de la base. Les courriels sont **masqués**
   (`chapax***@gmail.com`) ; une action explicite les révèle, et ce geste entre au journal.
-- **Sortie d'alpha** (D-123, #337) : le nombre de **testeurs distincts** ayant terminé une
-  partie, croisé aux comptes `approuve`, le seuil de **5** avec son état (atteint / pas atteint),
-  la liste des identifiants, et la requête à rejouer ailleurs. Un compte approuvé sans partie ne
-  compte pas, une partie d'un compte refusé non plus, et **deux parties du même testeur font un
-  testeur** — c'est une personne, pas une partie. Lecture seule, par le rôle `lecteur`.
+- **Sortie d'alpha** (D-123) : **non mesurable** depuis D-183. Le critère (cinq testeurs distincts ayant
+  terminé une partie) se lisait dans la table `combats`, supprimée (migration 0030, #738). Le bloc le
+  dit (`mesurable: false`, sans chiffre : jamais un zéro trompeur) ; une décision datée fixera la
+  mesure de remplacement à l'approche de la sortie d'alpha.
 - **Gestes nommés**, chacun une route : approuver un compte, le refuser **avec une raison
   obligatoire**, le marquer administrateur, trier un post-it (statut, raison, ticket),
   réattribuer les post-its anonymes à un compte choisi.
@@ -97,7 +95,7 @@ répond 401. Aucun en-tête CORS n'est émis : le jeton ne sort jamais en cross-
 
 ## Le reset de la beta (#342, D-130, D-150, D-153)
 
-Le reset remet à zéro **les traces de combat et le mur**, ainsi que **le Deck et la Collection du
+Le reset remet à zéro **le mur**, ainsi que **le Deck et la Collection du
 compte** (D-153 (2)), garde **chaque compte**, et pose la **Médaille de la période d'essai** sur les
 comptes approuvés, **une seule fois**. Ce n'est pas une migration : `admin.migrations` n'est pas
 touché. Il se fait dans la section **Reset de la beta** de la page, jamais en SQL libre.
@@ -137,7 +135,7 @@ rien n'est effacé. Une fois réussi, la seule voie est la **restauration de la 
 comptes créés depuis seraient alors perdus, et il faut le savoir avant.
 
 **Écart connu** : le rôle `lecteur` (`supabase/admin/roles.sql`) n'a de politique de lecture que sur
-`postits`, `votes`, `commentaires`, `combats`, `comptes`, `collection` et `deck`. `annonces_discord` lui
+`postits`, `votes`, `commentaires`, `comptes`, `collection` et `deck`. `annonces_discord` lui
 apparaît vide : l'aperçu ne la compte donc pas, et la vérification se fait avec le rôle administrateur.
 
 ## Structure

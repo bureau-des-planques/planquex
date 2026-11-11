@@ -66,11 +66,14 @@ alter default privileges in schema admin  grant select on tables to lecteur;
 -- `collection` et `deck` sont là pour l'**aperçu du reset** (#494, D-153 (2)) : leur RLS est
 -- **activée et forcée** (0020), donc sans politique nommée `lecteur` les lirait zéro ligne en
 -- silence, et l'aperçu mentirait.
+--
+-- `combats` n'y figure plus (#738, D-183) : la table est supprimée (0030), et ce fichier se rejoue
+-- après les migrations — nommer une table absente ferait échouer `create policy`.
 do $policies_lecteur$
 declare
   table_cible text;
 begin
-  foreach table_cible in array array['postits', 'votes', 'commentaires', 'combats', 'comptes', 'collection', 'deck']
+  foreach table_cible in array array['postits', 'votes', 'commentaires', 'comptes', 'collection', 'deck']
   loop
     execute format('drop policy if exists "lecteur lit tout" on public.%I', table_cible);
     execute format(
