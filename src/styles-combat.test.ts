@@ -684,22 +684,23 @@ describe('la bulle du tour garde 8 px de rembourrage vertical (#784)', () => {
 /**
  * **La bulle ne recouvre pas les piles sur bureau** (#784, D-200) : à 1280 × 800 elle allait de 24 à 676 px
  * alors que le Deck de la Direction est à 554–632 px : `text-occlusion` (« Deck » couvert à 100 %), le
- * constat du run #844 de `main`. Depuis D-200 la bulle est centrée au-dessus de la table ronde et sa
- * largeur retire la place des piles (13 rem : deux fois 5 rem de pile et leurs marges) au diamètre de la table.
+ * constat du run #844 de `main`. Depuis D-200 la bulle est posée dans la marge à gauche de la table
+ * ronde (elle recouvrait le Banc de la Direction quand elle était au-dessus du rond : #790).
  */
 describe('sur bureau, la bulle du tour laisse la place des piles (#784, D-200)', () => {
   function largeurBureau(feuille: string): string | undefined {
     return declarationsDansMedia(feuille, '(min-width: 900px)', '.battle .combat-superpose').get('width');
   }
 
-  it('la largeur retire 13 rem au diamètre de la table', () => {
-    expect(largeurBureau(CSS)).toMatch(/calc\(var\(--table-d\) - 13rem\)/);
+  it('la bulle tient dans la marge à gauche de la table : sa largeur retire le rond (--table-d / 2)', () => {
+    expect(largeurBureau(CSS)).toMatch(/50% - var\(--table-d\) \/ 2/);
+    expect(declarationsDansMedia(CSS, '(min-width: 900px)', '.battle .combat-superpose').get('left')).toBe('0.75rem');
   });
 
   // Sans ce cas, l'assertion ne garderait rien.
   it("le contrôle mord : la largeur d'avant (colonne entière) est refusée", () => {
     const fautif =
       '@media (min-width: 900px) { .battle .combat-superpose { right: auto; width: calc((100% - 0.85rem) * 1.15 / 2.15 - 0.5rem); } }';
-    expect(largeurBureau(fautif)).not.toMatch(/calc\(var\(--table-d\) - 13rem\)/);
+    expect(largeurBureau(fautif)).not.toMatch(/50% - var\(--table-d\) \/ 2/);
   });
 });

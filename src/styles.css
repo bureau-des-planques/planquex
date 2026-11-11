@@ -9454,12 +9454,12 @@ h2 {
     right: 0.4rem;
   }
 
-  /* La bulle du tour : centrée au-dessus de la table, entre les deux piles de la Direction (à gauche) et
-     de la table, et sans recouvrir la pile d'actions (à droite) : `text-occlusion` (#784) la refuserait. */
+  /* La bulle du tour : dans la marge **à gauche de la table ronde**, jamais dessus. Au-dessus du rond, elle
+     recouvrait les Planqués du Banc de la Direction (leur Seuil, 100 % couvert) : `text-occlusion` (#784)
+     la refuse. Sa largeur est la place qui reste entre le bord de la fenêtre et le rond. */
   .battle .combat-superpose {
-    left: 50%;
+    left: 0.75rem;
     right: auto;
-    transform: translateX(-50%);
-    width: min(34rem, calc(var(--table-d) - 13rem), calc(100% - 26rem));
+    width: min(18rem, calc(50% - var(--table-d) / 2 - 1.5rem));
   }
 }
