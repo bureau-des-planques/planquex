@@ -27,8 +27,6 @@ import { etatFinScriptee } from '@/game/scenario-fin';
 import { jouer as jouerSon } from '@/audio/sons';
 import { partieSauvegardee, reprendrePartie } from '@/store/partie';
 import type { Decks, Reprise } from '@/store/partie';
-import { combatTermine, tracerCombat } from '@/store/combats';
-import { derniereDe } from '@/store/derniere';
 import { aiTurnAction, createMatch, joinMatch } from '@/store/pvp';
 import type { Match } from '@/store/pvp';
 import { useStore } from '@/store/useStore';
@@ -245,37 +243,12 @@ export function useCombat({ tutoriel, sceneFin, sansMouvement, onCoup }: Options
    * qu'écrire ; le hook reste seul maître de l'état.
    */
   const enregistrerPartie = useStore((store) => store.enregistrerPartie);
-  const enregistrerDerniere = useStore((store) => store.enregistrerDerniere);
   useEffect(() => {
     // Un combat guidé ne s'enregistre pas : le testeur qui le rejoue ne doit pas perdre la
     // partie qu'il avait en cours (#272).
     if (tutoriel || sceneFin) return;
     enregistrerPartie(partieSauvegardee(state, match, decksSolo));
-    // La dernière partie terminée (#366) : une partie finie se revoit depuis Réglages.
-    const derniere = derniereDe(state, match, decksSolo);
-    if (derniere !== null) enregistrerDerniere(derniere);
-  }, [state, match, decksSolo, enregistrerPartie, enregistrerDerniere, tutoriel]);
-
-  /**
-   * **La trace du combat** (#173, D-086 ; #228, D-105) : une partie **terminée** part en
-   * arrière-plan, une seule fois — solo comme à deux, le mode de la ligne le dit. Sans
-   * configuration, rien ne part ; un échec réseau ne touche pas l'écran — la partie n'a
-   * jamais été perdue, elle vit dans le store (`partieSauvegardee` ci-dessus).
-   *
-   * La clé évite un second envoi : la fin d'une partie peut re-rendre l'écran (choix, relève),
-   * et la même trace ne se dépose qu'une fois.
-   */
-  const tracesEnvoyees = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const combat = combatTermine(state, match, decksSolo);
-    if (combat === null) return;
-    const cle = `${combat.graine}:${combat.journal.length}`;
-    if (tracesEnvoyees.current.has(cle)) return;
-    tracesEnvoyees.current.add(cle);
-    // `tracerCombat` avale le rejet : une trace perdue ne change rien à la fin de partie
-    // affichée, et un rejet non traité ne doit jamais remonter d'un simple effet.
-    void tracerCombat(combat);
-  }, [state, match, decksSolo]);
+  }, [state, match, decksSolo, enregistrerPartie, tutoriel]);
 
   /**
    * **Le verdict** (#378, D-137) : le second et dernier son du jeu. Il part **une fois**, quand la

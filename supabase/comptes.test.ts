@@ -10,8 +10,7 @@
  *
  * Ce que la base doit tenir, et que ce fichier éprouve :
  *
- *   (a) un compte **en attente** ne peut pas écrire — ni post-it, ni vote, ni trace de
- *       combat ;
+ *   (a) un compte **en attente** ne peut pas écrire — ni post-it, ni vote ;
  *   (b) un compte **approuvé** le peut ;
  *   (c) un **non-administrateur** n'approuve et ne refuse personne (0 ligne, sans erreur —
  *       c'est le piège de RLS : une modification refusée ne lève pas, elle ne touche rien) ;
@@ -53,13 +52,6 @@ if (!MIGRATION_COMPTES) throw new Error('supabase/migrations/0005_comptes.sql in
 const MIGRATION_MEDAILLE = fichiersMigrations().find((sql) => sql.includes('medaille_periode_essai'));
 if (!MIGRATION_MEDAILLE) throw new Error('supabase/migrations/0016_medaille_periode_essai.sql introuvable');
 
-const DECKS = {
-  playerDeck: ['sse-medecin-travail', 'management-responsable-unite'],
-  aiDeck: ['atelier-responsable-process']
-};
-const TYPES_CAFE = { playerCafeTypes: ['SSE'], aiCafeTypes: ['MANAGEMENT'] };
-const JOURNAL = [{ type: 'endTurn' }];
-
 type Issue = { accepte: true; lignes: Array<Record<string, unknown>> } | { accepte: false; message: string };
 
 async function tenter(db: Base, appareil: string, sql: string, params: unknown[] = []): Promise<Issue> {
@@ -95,15 +87,6 @@ const coller = (db: Base, appareil: string, id: string) =>
 
 const voter = (db: Base, appareil: string, postit: string) =>
   tenter(db, appareil, `insert into public.votes (postit_id, sens) values ($1, 'up') returning *`, [postit]);
-
-const combat = (db: Base, appareil: string) =>
-  tenter(
-    db,
-    appareil,
-    `insert into public.combats (mode, graine, decks, types_cafe, journal)
-     values ('solo', 42, $1::jsonb, $2::jsonb, $3::jsonb) returning *`,
-    [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)]
-  );
 
 /**
  * Une décision, vue comme une tentative. Une modification refusée par RLS **ne lève pas** :
@@ -174,20 +157,9 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
     expect(Number(votes.rows[0].n)).toBe(0);
   });
 
-  it('(a) un compte en attente ne dépose pas de trace de combat', async () => {
-    refuse(await combat(db, APPAREIL_C), /row-level security/);
-    const traces = await avecAppareil(db, APPAREIL_A, () => db.query(`select count(*) as n from public.combats`));
-    expect(Number(traces.rows[0].n)).toBe(0);
-  });
-
-  it('(b) un compte approuvé écrit : post-it, vote et trace de combat', async () => {
+  it('(b) un compte approuvé écrit : post-it et vote', async () => {
     accepte(await coller(db, APPAREIL_A, 'p-a'));
     accepte(await voter(db, APPAREIL_A, 'p-b'));
-    accepte(await combat(db, APPAREIL_A));
-
-    const traces = await avecAppareil(db, APPAREIL_A, () => db.query(`select auteur from public.combats`));
-    expect(traces.rows).toHaveLength(1);
-    expect(traces.rows[0].auteur).toBe(APPAREIL_A);
   });
 
   it('(c) un compte non administrateur n’approuve personne : 0 ligne, sans erreur', async () => {
@@ -273,7 +245,6 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
 
     accepte(await coller(db, APPAREIL_C, 'p-c'));
     accepte(await voter(db, APPAREIL_C, 'p-b'));
-    accepte(await combat(db, APPAREIL_C));
   });
 
   it('l’administrateur refuse avec sa raison ; un refus muet est refusé par la base', async () => {
@@ -313,9 +284,21 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
   });
 
   it('la migration est idempotente : rejouée, elle ne lève rien et ne change aucun état', async () => {
-    const avant = await etatDe(db, APPAREIL_C);
-    await db.exec(MIGRATION_COMPTES);
-    expect(await etatDe(db, APPAREIL_C)).toEqual(avant);
+    // La 0005 cite `public.combats` (sa politique d'écriture) : rejouée seule, elle a besoin de la
+    // table, que la 0030 supprime (#738). On la rejoue donc sur la suite d'avant la 0030 — le
+    // registre n'applique jamais deux fois un fichier (D-091), l'idempotence reste une garde.
+    const sansSuppression = fichiersMigrations()
+      .filter((sql) => !sql.includes('drop table if exists public.combats'))
+      .join('\n');
+    const ancienne = await base(sansSuppression);
+    try {
+      await creerCompte(ancienne, APPAREIL_C, { etat: 'en attente' });
+      const avant = await etatDe(ancienne, APPAREIL_C);
+      await ancienne.exec(MIGRATION_COMPTES);
+      expect(await etatDe(ancienne, APPAREIL_C)).toEqual(avant);
+    } finally {
+      await ancienne.close();
+    }
   });
 
   it('`anon` n’a aucun accès aux comptes', async () => {
@@ -603,18 +586,6 @@ const MUTATIONS: Array<{
     votant = auth.uid()`
       ),
     geste: (db) => voter(db, APPAREIL_C, 'p-b'),
-    attendu: 'accepte'
-  },
-  {
-    nom: '(a) sans la condition d’approbation du combat → un compte en attente dépose',
-    sql: () =>
-      muter(
-        `on public.combats for insert to authenticated
-  with check (auteur = auth.uid() and public.compte_approuve())`,
-        `on public.combats for insert to authenticated
-  with check (auteur = auth.uid())`
-      ),
-    geste: (db) => combat(db, APPAREIL_C),
     attendu: 'accepte'
   },
   {

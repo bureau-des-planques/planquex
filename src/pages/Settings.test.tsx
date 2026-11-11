@@ -170,12 +170,14 @@ describe('Settings — écran des Réglages', () => {
     });
   });
 
-  it('dit que les parties terminées, solo comme à deux, sont gardées sous le compte, sans case à cocher (D-086, D-088, D-105)', () => {
+  it('ne parle plus de traces de combat ni de « Revoir une partie » (D-183), et garde trois cases de réglage', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/parties terminées sont gardées sous ton compte/i)).toBeInTheDocument();
-    // D-086 : une **mention**, pas un consentement par combat — aucune case ne concerne
-    // les traces. Les trois cases de l'écran sont des réglages : le mouvement réduit, les
+    expect(screen.queryByText(/Traces de combat/i)).toBeNull();
+    expect(screen.queryByText(/parties terminées sont gardées/i)).toBeNull();
+    expect(screen.queryByText(/Revoir une partie/i)).toBeNull();
+    expect(screen.queryByRole('link', { name: /Revoir ma dernière partie/i })).toBeNull();
+    // Les trois cases de l'écran sont des réglages : le mouvement réduit, les
     // raccourcis clavier du combat (#189), et les deux sons du jeu (D-137, #378).
     expect(screen.getAllByRole('checkbox')).toHaveLength(3);
     for (const nom of [/Réduire les animations/i, /Raccourcis clavier au combat/i, /Sons du jeu/i]) {

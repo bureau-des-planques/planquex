@@ -18,9 +18,9 @@ const lire = (chemin: string) => readFileSync(fileURLToPath(new URL(chemin, impo
 
 /**
  * Les appels qui **sont** la mécanique de tour, et que la page ne fait plus elle-même :
- * appliquer un coup, faire décider la Direction, monter une table, en envoyer la trace.
+ * appliquer un coup, faire décider la Direction, monter une table.
  */
-const APPELS_DU_HOOK = ['applyAction(', 'aiTurnAction(', 'createBattle(', 'joinMatch(', 'tracerCombat('];
+const APPELS_DU_HOOK = ['applyAction(', 'aiTurnAction(', 'createBattle(', 'joinMatch('];
 
 /** Ce qu'une source garde encore de la mécanique : la liste des appels trouvés. */
 function appelsDeMecanique(source: string): string[] {

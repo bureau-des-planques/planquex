@@ -30,9 +30,9 @@
  * La bibliothèque est chargée **à la demande** (`import()` dynamique) : sans configuration, son
  * code ne part même pas dans le premier chargement.
  *
- * **La trace des combats** (#173, D-086) se dépose par `ecrireLigne` — même configuration,
- * même session, et **inerte sans configuration**. Ce module ne décide pas *quoi* envoyer :
- * la ligne est construite par `@/store/combats`, seule source de ce qui est gardé.
+ * **`ecrireLigne`** dépose une ligne au nom de la session — même configuration, même session,
+ * et **inerte sans configuration**. La trace des combats qui l'utilisait est retirée (#738,
+ * D-183) ; ce module ne décide pas *quoi* envoyer, c'est l'appelant.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -261,11 +261,11 @@ export async function clientMur(): Promise<ClientMur | null> {
  * interrompre le jeu (#527, D-156 : on ne signe plus pour écrire).
  *
  * Rend l'erreur que la base ou le réseau a donnée (`null` si la ligne est passée) ; **ne
- * décide pas** de ce que l'appelant en fait — `@/store/combats` choisit de ne jamais
+ * décide pas** de ce que l'appelant en fait : l'appelant choisit de ne jamais
  * interrompre le jeu. Sans configuration, rien n'est contacté et la raison est rendue.
  *
  * L'insertion s'appuie sur `auth.uid()` (`auteur` a cette valeur par défaut dans
- * `0002_combats.sql`) : la session doit donc exister **avant** l'écriture, sinon la RLS
+ * les tables qui en portent un) : la session doit donc exister **avant** l'écriture, sinon la RLS
  * refuserait la ligne. Depuis D-156, on ne la **fabrique** plus (plus de signature anonyme).
  */
 export async function ecrireLigne(table: string, ligne: Record<string, unknown>): Promise<{ erreur: string | null }> {

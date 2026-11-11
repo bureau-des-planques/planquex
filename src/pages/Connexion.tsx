@@ -417,7 +417,7 @@ export function Connexion() {
         <section className="section">
           <h1>Bienvenue, {profil.pseudo}</h1>
           <p className="muted max-w-[64ch]">
-            Trois étapes, et tu es dans le bureau. Voici ton badge : il te suit sur le mur et dans tes traces de combat.
+            Trois étapes, et tu es dans le bureau. Voici ton badge : il te suit sur le mur.
           </p>
         </section>
         <section className="section panel" aria-labelledby="badge-titre">

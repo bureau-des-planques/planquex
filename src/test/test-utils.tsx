@@ -4,7 +4,6 @@ import { MemoryRouter, BrowserRouter } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { ALL_CARDS } from '@/data';
 import type { Faction } from '@/data/types';
-import type { DernierePartie } from '@/store/derniere';
 import type { PartieSauvegardee } from '@/store/partie';
 import type { Difficulte } from '@/game/ia';
 import type { IntentionDeck, RaisonDeck } from '@/lib/deck';
@@ -32,7 +31,6 @@ export interface TestStoreState {
   /** La partie en cours à reprendre (#126) ; absente = aucune. */
   partie?: PartieSauvegardee | null;
   /** La dernière partie terminée (#366) ; absente = aucune. */
-  derniere?: DernierePartie | null;
   /** Le cran de difficulté de la Direction (#251) ; absent = `normal`. */
   difficulte?: Difficulte;
   /** La file d'intentions du Deck (#491) ; absente = vide. */
@@ -71,7 +69,6 @@ export function setupTestStore(initialState: TestStoreState = {}) {
     tutorielVu: initialState.tutorielVu ?? true,
     pasAPasCombatVu: initialState.pasAPasCombatVu ?? true,
     partie: initialState.partie ?? null,
-    derniere: initialState.derniere ?? null,
     difficulte: initialState.difficulte ?? 'normal',
     deckOutbox: initialState.deckOutbox ?? [],
     deckImporte: initialState.deckImporte ?? false,

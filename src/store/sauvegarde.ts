@@ -51,7 +51,6 @@ export const CLES_REGLAGES = [
   'tutorielVu',
   'pasAPasCombatVu',
   'partie',
-  'derniere',
   'difficulte'
 ] as const;
 type CleReglage = (typeof CLES_REGLAGES)[number];

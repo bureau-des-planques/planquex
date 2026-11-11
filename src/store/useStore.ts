@@ -21,8 +21,6 @@ import type { IntentionDeck, OperationDeck, RaisonDeck } from '@/lib/deck';
 import type { Card, CafeType, Rarity } from '@/data/types';
 import { lirePartie } from '@/store/partie';
 import type { PartieSauvegardee } from '@/store/partie';
-import { lireDerniere } from '@/store/derniere';
-import type { DernierePartie } from '@/store/derniere';
 
 /** Clé de persistance. Source unique : `Settings.tsx` l'affiche, `persist` l'écrit. */
 export const STORAGE_KEY = 'bureau-des-planques-v1';
@@ -60,7 +58,10 @@ let envoiDeck: Promise<RaisonDeck | null> | null = null;
 let importDeckEnCours: Promise<RaisonDeck | null> | null = null;
 
 /**
- * Version de la forme persistée. **18** : le store gagne `deckImporte`, le drapeau qui dit
+ * Version de la forme persistée. **19** : `derniere` (la dernière partie terminée, v13, #366)
+ * **quitte la forme persistée** — « Revoir une partie » est retiré (#738, D-183) ; une
+ * sauvegarde v18 qui la porte encore se lit sans erreur, le champ est ignoré et n'est pas
+ * réécrit. **18** : le store gagne `deckImporte`, le drapeau qui dit
  * que le Deck local de cet appareil est monté dans le compte (#492, D-153 (1)) — absent d'un
  * état v17, il vaut `false` : le Deck local montera au prochain login. **17** : le Deck gagne
  * sa **file d'intentions**
@@ -101,7 +102,7 @@ let importDeckEnCours: Promise<RaisonDeck | null> | null = null;
  * générateur seedé du store (ticket #29) — retiré en v15. Toute nouvelle version exige une
  * branche dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 18;
+export const STORAGE_VERSION = 19;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `docs/JEU.md` §5 : **un id
@@ -282,12 +283,6 @@ export interface AppState {
    */
   partie: PartieSauvegardee | null;
   /**
-   * La **dernière partie terminée** (ticket #366) : de quoi la rejouer et son verdict, pour la
-   * revoir depuis Réglages. `null` tant qu'aucune partie n'est finie. Écrite en fin de combat
-   * par l'écran de combat ; remise à zéro par « Réinitialiser la progression ».
-   */
-  derniere: DernierePartie | null;
-  /**
    * **Le cran de difficulté de la Direction** (#251, D-145) : il règle ensemble la
    * **politique** de l'IA et le **Deck** qu'elle joue (`@/game/deck-direction`).
    * `normal` par défaut — la recherche à deux coups de l'écran (D-084), donc un état qui
@@ -354,8 +349,6 @@ export interface AppState {
   setPasAPasCombatVu: (value: boolean) => void;
   /** Range la partie en cours (`null` pour n'en garder aucune). */
   enregistrerPartie: (partie: PartieSauvegardee | null) => void;
-  /** Range la dernière partie terminée (`null` pour l'effacer). */
-  enregistrerDerniere: (derniere: DernierePartie | null) => void;
 }
 
 /**
@@ -381,7 +374,6 @@ export type PersistedState = Pick<
   | 'tutorielVu'
   | 'pasAPasCombatVu'
   | 'partie'
-  | 'derniere'
   | 'difficulte'
 >;
 
@@ -402,7 +394,6 @@ export function partializeState(state: AppState): PersistedState {
     tutorielVu: state.tutorielVu,
     pasAPasCombatVu: state.pasAPasCombatVu,
     partie: state.partie,
-    derniere: state.derniere,
     difficulte: state.difficulte
   };
 }
@@ -440,7 +431,6 @@ export const useStore = create<AppState>()(
       tutorielVu: false,
       pasAPasCombatVu: false,
       partie: null,
-      derniere: null,
       difficulte: DIFFICULTE_PAR_DEFAUT,
       openPack: () => {
         // Déjà en vol : on rend la **même** promesse, donc une seule demande et un seul crédit.
@@ -681,8 +671,6 @@ export const useStore = create<AppState>()(
           pasAPasCombatVu: false,
           // La partie en cours fait partie de la progression remise à zéro (#126).
           partie: null,
-          // La dernière partie terminée se remet à zéro avec la progression (#366).
-          derniere: null,
           // La difficulté revient au défaut : la remise à zéro part d'un poste neuf
           // (#251, D-145), et `normal` est ce que l'écran jouait avant.
           difficulte: DIFFICULTE_PAR_DEFAUT
@@ -697,8 +685,7 @@ export const useStore = create<AppState>()(
       setRaccourcisCombat: (value) => set({ raccourcisCombat: value }),
       setTutorielVu: (value) => set({ tutorielVu: value }),
       setPasAPasCombatVu: (value) => set({ pasAPasCombatVu: value }),
-      enregistrerPartie: (partie) => set({ partie }),
-      enregistrerDerniere: (derniere) => set({ derniere })
+      enregistrerPartie: (partie) => set({ partie })
     }),
     {
       name: STORAGE_KEY,
@@ -749,7 +736,8 @@ export const useStore = create<AppState>()(
  * se rejouerait pas à l'identique.
  *
  * **v12 → v13** (#366) : le store gagne `derniere`, la dernière partie terminée (de quoi la
- * rejouer et son verdict). Un état v12 n'en a pas : `null`. Rien d'autre ne bouge.
+ * rejouer et son verdict). Un état v12 n'en a pas : `null`. Rien d'autre ne bouge. **Retiré en
+ * v19** (voir plus bas).
  *
  * **v13 → v14** (#251, D-145) : le store gagne `difficulte`, le cran de la Direction.
  * Un état v13 n'en a pas : `normal`, la recherche à deux coups de D-084 — donc son écran
@@ -773,12 +761,17 @@ export const useStore = create<AppState>()(
  * Deck local de cet appareil est monté dans le compte. Un état v17 n'en a pas : `false`, donc
  * son Deck local montera au prochain login. Le **marqueur du serveur** (`0026`) reste
  * l'autorité : un second appareil repart à `false` sans rien réimporter.
+ *
+ * **v18 → v19** (#738, D-183) : `derniere` **quitte la forme persistée** — « Revoir une partie »
+ * est retiré avec la trace des combats. Une sauvegarde v18 qui la porte encore se lit **sans
+ * erreur** : le champ est ignoré (il n'entre pas dans l'état) et n'est pas réécrit.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
-  const state = (persisted ?? {}) as Partial<AppState> & { rng?: unknown };
+  const state = (persisted ?? {}) as Partial<AppState> & { rng?: unknown; derniere?: unknown };
   // **v14 → v15** : le générateur du store est retiré, quel que soit l'âge de l'état. Une
   // sauvegarde qui le porte se lit (on l'ignore), une forme persistée neuve ne l'écrit plus.
-  const { rng: _ancienGenerateur, ...sansGenerateur } = state;
+  // **v18 → v19** : `derniere` est retirée de même, quel que soit l'âge de l'état.
+  const { rng: _ancienGenerateur, derniere: _ancienneDerniere, ...sansGenerateur } = state;
   const migrated = version < STORAGE_VERSION ? withRenamedCardIds(sansGenerateur) : sansGenerateur;
   const normalise: Partial<AppState> = {
     ...migrated,
@@ -795,9 +788,6 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     deckImporte: typeof migrated.deckImporte === 'boolean' ? migrated.deckImporte : false,
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     partie: lirePartie(migrated.partie),
-    // **v12 → v13** (#366) : la dernière partie terminée. Un état v12 n'en a pas : `null`. Une
-    // forme mal faite est écartée (`lireDerniere`), comme la partie en cours.
-    derniere: lireDerniere(migrated.derniere),
     // **v13 → v14** (#251, D-145) : le cran de difficulté. Un état v13 n'en a pas, et une
     // valeur forgée ne passe pas : `normal`, le défaut de D-084.
     difficulte: estDifficulte(migrated.difficulte) ? migrated.difficulte : DIFFICULTE_PAR_DEFAUT,
