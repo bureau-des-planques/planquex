@@ -108,16 +108,21 @@ export function blocDeFini(agent) {
 - Pas de \`git push\`, pas de PR : l'orchestrateur s'en charge.
 - Ta réponse finale : ce qui est écrit, où, et ce qui reste à trancher.`;
   }
-  return `## Fini, au sens du dépôt (\`AGENTS.md\` §8.4)
-- \`npm run check\`, \`npm run format:check\`, \`npm test\`, \`npm run garde-fous\`, \`npm run build\` : exit 0 chacun.
+  return `## Fini, au sens du dépôt (\`AGENTS.md\` §8.4, D-203)
+Tu joues la définition de fini **de l'agent**, pas celle de la PR :
+- \`npm run check\` et \`npm run format:check\` : exit 0 chacun.
+- Les **tests ciblés** : \`npx vitest run <fichiers touchés ou voisins>\`, exit 0. Pas la suite entière.
+- \`npm run garde-fous\` **seulement** si tu as ajouté ou modifié une entrée de \`scripts/ci/garde-fous.mjs\`.
+- Les preuves propres au ticket : capture, \`detect:ui:page\` deux fois, planche de frames.
 - Un test couvre le changement, et **le contrôle mord** : il est confronté à un cas fautif.
-- \`npm test\` et \`npm run garde-fous\` **jamais en parallèle** : les gardes mutent les sources.
 - Docs mises à jour si une commande, une règle ou un contenu change.
+
+La **batterie complète** (\`npm test\`, \`npm run garde-fous\`, \`npm run build\`, \`npm run ci:etat\`) est lancée **par l'orchestrateur, machine calme, une fois par PR**. Tu ne la joues pas : plusieurs agents qui la jouent ensemble saturent la machine et font échouer des tests sans rapport sur timeout. N'écris pas « batterie verte » : écris ce que tu as **réellement lancé**, avec son code de sortie. Un test qui échoue se relance **seul** avant de conclure.
 
 ## Livraison
 - Commits en français, sujet \`type(zone): …\`, un commit par intention.
 - Pas de \`git push\`, pas de PR : l'orchestrateur s'en charge.
-- Ta réponse finale : ce qui est fait, les commandes et leurs codes de sortie, ce qui reste ouvert.`;
+- Ta réponse finale : ce qui est fait, les commandes réellement lancées et leurs codes de sortie, ce qui reste ouvert (dont ce que la batterie de l'orchestrateur doit encore jouer).`;
 }
 
 /** Le prompt, à partir du ticket lu et des options. Pur : il ne lit ni le réseau ni le disque. */

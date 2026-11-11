@@ -6,7 +6,7 @@
 
 ## 1. Règles d'or
 
-1. Lire ce fichier. Pour `docs/DECISIONS.md` (202 décisions, ~359 000 caractères), ouvrir son **index** (`docs/DECISIONS-INDEX.md`) et lire les seules décisions qui touchent ta zone. Un point de règle non tranché se signale, il ne s'invente pas.
+1. Lire ce fichier. Pour `docs/DECISIONS.md` (203 décisions, ~360 000 caractères), ouvrir son **index** (`docs/DECISIONS-INDEX.md`) et lire les seules décisions qui touchent ta zone. Un point de règle non tranché se signale, il ne s'invente pas.
 2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier les versions abandonnées (§9).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
@@ -81,7 +81,7 @@ Dans `docs/agents/audit.md`.
 
 ### 8.4 Definition of done
 
-Pour une modification de code :
+Pour une modification de code, la définition de fini **complète** est celle **de la PR**, vérifiée par l'orchestrateur avant fusion, machine calme, une fois par PR — pas celle de chaque agent lancé en parallèle (D-203). Un agent joue `npm run check`, `npm run format:check`, les tests ciblés (`npx vitest run <fichiers>`), `garde-fous` seulement s'il a touché `scripts/ci/garde-fous.mjs`, et les preuves de son ticket ; il dit ce qu'il a lancé. La PR, elle, doit avoir :
 
 - `npm run check`, `npm run format:check`, `npm test` (avec au moins un test du changement), `npm run garde-fous` et `npm run build` : exit 0, `dist/index.html` et `dist/sw.js` présents.
 - Toute garde **nouvelle** est ancrée (cas fautif ou entrée dans `scripts/ci/garde-fous.mjs`). Une assertion qui ne peut pas échouer ne compte pas.
