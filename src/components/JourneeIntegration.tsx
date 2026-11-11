@@ -482,7 +482,7 @@ export function JourneeIntegration() {
    * suit le panneau. Sa copie animée est `aria-hidden` ; la région `aria-live` lit la réplique
    * entière d'un coup (D-187 (4)).
    *
-   * **Deux tailles** (D-195 (1) et (5), décision du propriétaire du 10/11/2026). Quand le Chef de
+   * **Deux tailles** (D-195 (1) pour le grand format, D-204 (3) pour la petite tête de 56 px). Quand le Chef de
    * cabinet parle, la tête fait **un tiers de l'écran** (`--journee-tete`, `journee-tete.ts`), en
    * bas, à la place de la barre de navigation, et le **voile** assombrit la page autour de la
    * cible. En pause et sur `/battle`, elle est **discrète** : 56 px dans le coin bas gauche, sans

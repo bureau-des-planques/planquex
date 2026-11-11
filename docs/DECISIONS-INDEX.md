@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 203 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 207 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -53,15 +53,15 @@
 | D-045 | 21/10/2026 | #121 (Q2) — les illustrations passent à une source unique… |  |
 | D-046 | 21/10/2026 | #121 (Q3, Q15) — FACTION_META.color (src/data/factions.ts) est la source canonique… |  |
 | D-047 | 21/10/2026 | Rangement local — le dossier de travail devient planquex/, et… |  |
-| D-048 | 21/10/2026 | Trois étapes nommées : alpha, beta, release — et rien… | D-063, D-117 |
+| D-048 | 21/10/2026 | ⚠ Étape, numéro et suffixe précisés par D-206 (11/11/2026) :… | D-063, D-117, D-206 |
 | D-049 | 21/10/2026 | Le PvP de la beta passe par un lien ou… |  |
-| D-050 | 21/10/2026 | Le nom des versions : l'étape est un mot, le… |  |
-| D-051 | 21/10/2026 | Une ligne de version par étape — et la règle… |  |
+| D-050 | 21/10/2026 | ⚠ Amendée par D-206 (11/11/2026) : l'étape n'est plus liée… | D-206 |
+| D-051 | 21/10/2026 | ⚠ Amendée par D-206 (11/11/2026) : l'étape ne porte plus… | D-206 |
 | D-052 | 21/10/2026 | Un lieu de session ne vit pas dans un .opencode/… |  |
 | D-053 | 21/10/2026 | L'infra de l'alpha est montée ; ce qui reste est… |  |
 | D-054 | 21/10/2026 | L'application installée s'appelle « Planquex » et porte son icône… |  |
 | D-055 | 21/10/2026 | La bascule vers planquex.4k7.org est bloquée par les droits Cloudflare,… |  |
-| D-056 | 21/10/2026 | ⚠ Amendée le 27/10/2026 — voir D-117 : le critère… | D-117, D-123, D-183 |
+| D-056 | 21/10/2026 | ⚠ Critère (a) amendé par D-207 (11/11/2026, point 2) :… | D-117, D-123, D-183 |
 | D-057 | 21/10/2026 | Illustrations : un pilote d'une trentaine d'images sur l'ATELIER, puis… |  |
 | D-058 | 21/10/2026 | La Boîte à idées — les retours des invités entrent… | D-068, D-161 |
 | D-059 | 21/10/2026 | Le tri des retours, et l'ordre face au backend .… | D-088 |
@@ -83,7 +83,7 @@
 | D-075 | 22/10/2026 | « Chariot » devient « Deck », « Parc »… |  |
 | D-076 | 22/10/2026 | #159 — défausser une carte de la main . Primitive… |  |
 | D-077 | 22/10/2026 | #164 — un Talent peut infliger des dégâts (décision de… |  |
-| D-078 | 22/10/2026 | #160 — révéler une carte ou la main (décision de… |  |
+| D-078 | 22/10/2026 | ⚠ Close par D-207 (11/11/2026, point 4) : le tirage… |  |
 | D-079 | 22/10/2026 | ⚠ Dette UI payée : RegardDuDessus (src/pages/Battle.tsx) affiche le dessus… |  |
 | D-080 | 22/10/2026 | #161 — chercher une carte dans le Deck (décision de… |  |
 | D-081 | 22/10/2026 | #163 — les Talents « en jouant » (décision de… |  |
@@ -141,8 +141,8 @@
 | D-133 | 27/10/2026 | pg_net retourne dans extensions, et les deux fonctions de déclencheur… |  |
 | D-134 | 27/10/2026 | L'équilibrage se mesure sur une bande fixée d'avance, et la… |  |
 | D-135 | 27/10/2026 | Le service du profil reste décoratif — et c'est une… |  |
-| D-136 | 27/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la réplique de la… | D-160 |
-| D-137 | 27/10/2026 | Deux sons dans l'alpha, et un réglage qui les coupe… | D-166 |
+| D-136 | 27/10/2026 | ⚠ Amendée par D-205 (11/11/2026, point 1) : la Journée… | D-160, D-205 |
+| D-137 | 27/10/2026 | ⚠ Point (c) amendé par D-207 (11/11/2026, point 5) :… | D-166 |
 | D-138 | 27/10/2026 | Les migrations à venir suivent le disque : 0017 puis… |  |
 | D-139 | 28/10/2026 | Une variante a sa propre illustration, et une seule .… |  |
 | D-140 | 28/10/2026 | La production se déploie sur un tag, et une PR… |  |
@@ -157,7 +157,7 @@
 | D-149 | 28/10/2026 | La Direction joue trois Decks, un par archétype, et la… |  |
 | D-150 | 28/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
 | D-151 | 28/10/2026 | La difficulté a trois crans nommés, et chacun change la… |  |
-| D-152 | 29/10/2026 | La version s'écrit v<numéro>-<étape>, partout . (1) Le tag, le… |  |
+| D-152 | 29/10/2026 | ⚠ Précisée par D-206 (11/11/2026) : la chaîne v<numéro>-<étape> reste… | D-206 |
 | D-153 | 29/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… | D-178, D-179 |
 | D-154 | 29/10/2026 | Le rangement de scripts/ vit en cinq dossiers, et un… |  |
 | D-155 | 29/10/2026 | La page /installation est hors du jeu, et le garde-fou… |  |
@@ -170,7 +170,7 @@
 | D-162 | 31/10/2026 | ⚠ Amendée par D-194 (10/11/2026, point 1) : le «… | D-163, D-194 |
 | D-163 | 31/10/2026 | ⚠ Amendée par D-196 (10/11/2026) : (3) « Suivant »… | D-181, D-196 |
 | D-164 | 31/10/2026 | Les libellés d'une vignette de carte se lisent . Une… |  |
-| D-165 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le pas-à-pas du combat… |  |
+| D-165 | 31/10/2026 | ⚠ Précisée par D-205 (11/11/2026, point 7) : le combat… |  |
 | D-166 | 31/10/2026 | Le combat a un son par geste, et la fiche… |  |
 | D-167 | 31/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la surface… | D-182 |
 | D-168 | 31/10/2026 | Le contrôle des écrans refuserait un scan muet . impeccable… |  |
@@ -192,7 +192,7 @@
 | D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |  |
 | D-185 | 04/11/2026 | ⚠ Précisée par D-186 (04/11/2026, point (1)) : le nom… |  |
 | D-186 | 04/11/2026 | ⚠ Précisée par D-198 (10/11/2026, point 1) : la borne… |  |
-| D-187 | 04/11/2026 | ⚠ Amendée par D-198 (10/11/2026, point 4) : l'écriture de… | D-195, D-198 |
+| D-187 | 04/11/2026 | ⚠ Point (6) (a)(b)(c) confirmé par D-204 (11/11/2026, point 4).… | D-195, D-198 |
 | D-188 | 07/11/2026 | Les trois audits datés d'octobre quittent docs/ pour docs/archives/ .… |  |
 | D-189 | 07/11/2026 | Un PNG de docs/preuves/ tient sous 1 Mo ; l'historique… |  |
 | D-190 | 09/11/2026 | La marque du jeu devient le sceau à la tasse… |  |
@@ -200,12 +200,16 @@
 | D-192 | 09/11/2026 | Un cinquième onglet, la Pause café, devient l'espace social ;… |  |
 | D-193 | 09/11/2026 | ⚠ Amendée par D-200 (10/11/2026) : le point (5), «… | D-200 |
 | D-194 | 10/11/2026 | Pendant la Journée d'intégration, un fond flou, voilé ou inerte… |  |
-| D-195 | 10/11/2026 | ⚠ Précisée par D-198 (10/11/2026, points 1, 2 et 6)… |  |
+| D-195 | 10/11/2026 | ⚠ Point (5) « mode réduit de la tête pendant… |  |
 | D-196 | 10/11/2026 | La Journée n'a plus de bouton « Suivant » :… |  |
-| D-197 | 10/11/2026 | ⚠ Point (5) tranché par D-199 (10/11/2026) : le compte… |  |
-| D-198 | 10/11/2026 | La Journée : budget, nom du locuteur, issue du combat,… |  |
+| D-197 | 10/11/2026 | ⚠ Point (4) précisé par D-205 (11/11/2026, point 5) :… |  |
+| D-198 | 10/11/2026 | ⚠ Points (6) et (8) tranchés par D-205 (11/11/2026, points… |  |
 | D-199 | 10/11/2026 | ⚠ Amendée par D-201 (10/11/2026) : un compte en attente… | D-201 |
-| D-200 | 10/11/2026 | Le combat sur écran de bureau suit la composition du… |  |
+| D-200 | 10/11/2026 | ⚠ Précisée par D-204 (11/11/2026, points 1 et 2) :… |  |
 | D-201 | 10/11/2026 | Un compte en attente d'approbation ne joue pas : il… |  |
-| D-202 | 11/11/2026 | Export et import après la synchro : une archive numérotée… |  |
+| D-202 | 11/11/2026 | ⚠ Points (a) à (e) tranchés par D-207 (11/11/2026, point… |  |
 | D-203 | 11/11/2026 | Les agents jouent le ciblé ; la batterie complète est… |  |
+| D-204 | 11/11/2026 | Le combat sur bureau et l'encadré de la Journée :… |  |
+| D-205 | 11/11/2026 | La Journée à quatre étapes, le parcours de départ, le… |  |
+| D-206 | 11/11/2026 | La règle des versions change, et la release attend le… |  |
+| D-207 | 11/11/2026 | Sauvegarde, synchro et restes du journal (le propriétaire du projet,… |  |
