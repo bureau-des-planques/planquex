@@ -89,10 +89,14 @@ export const REPLIQUES_JOURNEE = {
   // **Texte provisoire** (D-205 (2), O-017) : l'ancienne annonce demandait de charger un Deck, ce
   // n'est plus le geste. Trois variantes sont proposées dans le rapport du #805 ; le propriétaire tranche.
   collectionDeck:
-    'Ouvre l’onglet Deck : vingt cartes, déjà comptées par la Direction, et des Decks proposés pour t’éviter d’en choisir. Un Deck, c’est un organigramme : tout le monde y figure, personne ne sait pourquoi.',
+    'Ta Collection, c’est ce que tu possèdes ; ton Deck, ce que tu joues. Ouvre l’onglet Deck : tu y trouveras vingt cartes, et des Decks proposés par la Direction pour t’éviter de réfléchir.',
   combat:
     'Le combat guidé te tient la main, c’est rassurant. Trois Interventions suffisent pour gagner, mais la Direction a déjà rédigé le compte rendu de ta défaite.',
-  /** La dernière étape : c'est elle qui porte la **phrase de fin** de la Journée (D-195 (5)). */
+  /**
+   * La dernière étape : c'est elle qui porte la **phrase de fin** de la Journée (D-195 (5)) et, depuis
+   * D-205 (1), **l'évocation de la sauvegarde**, sans geste (« Tes données » est sortie). **Texte
+   * provisoire** (O-017) : trois variantes dans le rapport du #805, le propriétaire tranche.
+   */
   comite:
-    'Colle un post-it, IP pour une idée, OUF pour un défaut : ce sera ta première contribution au débat. Le mur ne lit rien, mais il archive tout. La Journée est finie, le travail commence.'
+    'Colle un post-it, IP pour une idée, OUF pour un défaut. Pense à ta sauvegarde, dans Réglages : c’est ta seule copie, la Direction n’archive que le mur. La Journée est finie, le travail commence.'
 } as const;

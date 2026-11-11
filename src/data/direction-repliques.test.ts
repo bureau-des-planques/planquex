@@ -68,7 +68,7 @@ function motHorsJeu(texte: string): string | undefined {
 const FORMULE_DE_PERTE = /perdu|perdre|perds|défaite/i;
 const FORMULE_DE_GAIN = /gagné|gagner|gagnes|victoire|félicitations/i;
 
-/** Toutes les répliques du jeu : la Journée (cinq) et le combat (dix-neuf). */
+/** Toutes les répliques du jeu : la Journée (quatre) et le combat (dix-neuf). */
 const REPLIQUES_BORNEES: readonly string[] = [
   ...Object.values(REPLIQUES_JOURNEE),
   ...Object.values(REPLIQUES_DIRECTION).flat()

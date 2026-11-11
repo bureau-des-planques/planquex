@@ -1031,7 +1031,9 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('la réplique est un vrai bouton : Entrée et Espace l’affichent, et son nom dit l’action', async () => {
     const { unmount } = monterPanneau(1);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Ouvre l’onglet Deck.*tout le texte/ });
+    const encadre = screen.getByRole('button', {
+      name: /Chef de cabinet : Ta Collection, c’est ce que tu possèdes.*tout le texte/
+    });
     act(() => encadre.focus());
     await userEvent.keyboard('{Enter}');
     expect(encadre).toHaveAttribute('data-complet', 'true');
@@ -1120,7 +1122,7 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 
   it('un tap sur une étape avec geste ne termine jamais la Journée', async () => {
     const { unmount } = monterPanneau(1);
-    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Ouvre l’onglet Deck/ });
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Ta Collection, c’est ce que tu possèdes/ });
     await userEvent.click(encadre);
     await userEvent.click(encadre);
     // **Le contrôle mord** : un tap qui terminerait sur une étape avec geste écrirait `tutorielVu`.

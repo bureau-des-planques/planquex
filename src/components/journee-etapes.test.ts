@@ -292,6 +292,21 @@ describe('la Direction accueille le nouveau (31/10/2026 ; D-195 (2) depuis le 10
     }
   });
 
+  it('une réplique sans geste évoque la sauvegarde, sans en faire un geste (D-205 (1))', () => {
+    const sansGeste = ETAPES_JOURNEE.filter((etape) => etape.geste === undefined);
+    expect(sansGeste.some((etape) => /sauvegarde/i.test(etape.direction))).toBe(true);
+    // **Le contrôle mord** : sans la mention, la liste des répliques sans geste ne la porte plus.
+    const sansMention = sansGeste.map((etape) => ({
+      ...etape,
+      direction: etape.direction.replace(/sauvegarde/gi, 'archive')
+    }));
+    expect(sansMention.some((etape) => /sauvegarde/i.test(etape.direction))).toBe(false);
+    // Elle ne vient d'aucune étape à geste : « Tes données » n'existe plus.
+    for (const etape of ETAPES_JOURNEE.filter((e) => e.geste !== undefined)) {
+      expect(etape.direction, etape.titre).not.toMatch(/sauvegarde/i);
+    }
+  });
+
   it('`motsDeLaReplique` compte la réplique seule : le nom « Chef de cabinet » est hors budget', () => {
     // Trente mots de réplique : le compte dit 30, pas 33 (D-186, décision du 10/11/2026).
     const trente = { ...ETAPES_JOURNEE[0], direction: `${Array.from({ length: 30 }, () => 'mot').join(' ')}.` };
