@@ -292,6 +292,22 @@ impose le **merge commit** depuis le 26/10/2026 — c'est la **discipline du ges
 - **`npm run status` et `npm run build` ne se lancent pas ensemble** (déjà en §5) : `vite` vide
   `dist/`.
 
+### Qui joue quelle suite (D-203, #802)
+
+Constat du 11/11/2026 : quatre agents ont chacun joué la batterie complète en même temps
+(charge ≈ 43) ; 10 tests sans rapport ont échoué sur timeout, puis repassaient seuls.
+
+- **L'agent** joue le **ciblé** : `npm run check`, `npm run format:check`,
+  `npx vitest run <fichiers touchés ou voisins>`, `npm run garde-fous` **seulement** s'il a
+  touché `scripts/ci/garde-fous.mjs`, et les preuves propres au ticket. Il écrit ce qu'il a
+  **réellement lancé**, jamais « batterie verte ».
+- **L'orchestrateur** joue le **complet** (`npm test`, `garde-fous`, `build`, `ci:etat`) sur
+  machine calme, **un lot à la fois**, **une fois par PR**.
+- Un test qui échoue sous charge se **relance seul** : s'il passe, c'était un timeout ; s'il
+  échoue encore, c'est une vraie panne.
+- Après une batterie **interrompue**, `git status` avant tout : `garde-fous` a pu laisser une
+  source mutée (`git checkout -- <fichier>`).
+
 ## 7. Ce qui ne se délègue pas à un agent
 
 - **une décision** : un acte daté (`docs/DECISIONS.md`) est humain. Un agent peut **préparer**
