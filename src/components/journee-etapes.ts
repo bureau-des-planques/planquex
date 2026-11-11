@@ -226,10 +226,10 @@ export const MOTS_PAR_MINUTE = 180;
  */
 export function ligneAideGeste(etape: EtapeJournee): string | null {
   if (etape.geste === undefined) return null;
-  // **Tient sur une ligne à 420 px** (D-205 (4), #788) : le texte est court, mesuré sur capture.
-  return etape.geste === 'combat'
-    ? 'Joue le combat, l’étape suivante s’ouvrira'
-    : 'Fais le geste, l’étape suivante s’ouvrira';
+  // **Tient sur une ligne à 420 px** (D-205 (4), #788). Mesuré le 11/11/2026 sur le build à 420 × 900 :
+  // l'encadré ne fait que 207 px à côté de la tête, et « Fais le geste, l’étape suivante s’ouvrira »
+  // (41 caractères, l'exemple de D-205) passe encore sur deux lignes ; 33 caractères tiennent sur une.
+  return etape.geste === 'combat' ? 'Joue le combat, la suite s’ouvrira' : 'Fais le geste, la suite s’ouvrira';
 }
 
 /**

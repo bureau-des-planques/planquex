@@ -716,7 +716,7 @@ describe('la ligne d’aide du geste est visible dans l’encadré de parole (D-
 
   it('une étape avec geste rend une seule ligne d’aide, visible, dans l’encadré, annoncée en `status`', () => {
     const { unmount } = monterSansGeste();
-    const aides = screen.getAllByText(/Fais le geste, l’étape suivante s’ouvrira/);
+    const aides = screen.getAllByText(/Fais le geste, la suite s’ouvrira/);
     // **Une seule fois** : ni copie `aria-hidden`, ni seconde région.
     expect(aides).toHaveLength(1);
     const aide = aides[0];
@@ -735,7 +735,7 @@ describe('la ligne d’aide du geste est visible dans l’encadré de parole (D-
 
   it('le cas fautif est refusé : une ligne `sr-only` n’est pas visible', () => {
     const { unmount } = monterSansGeste();
-    const aide = screen.getByText(/Fais le geste, l’étape suivante s’ouvrira/);
+    const aide = screen.getByText(/Fais le geste, la suite s’ouvrira/);
     const fautive = aide.cloneNode(true) as HTMLElement;
     fautive.className = 'sr-only';
     expect(aide.classList.contains('sr-only')).toBe(false);
@@ -747,7 +747,7 @@ describe('la ligne d’aide du geste est visible dans l’encadré de parole (D-
     const { unmount } = monterPanneau(3);
     expect(document.querySelector('.journee__parole')).not.toBeNull();
     expect(document.querySelector('.journee__aide')).toBeNull();
-    expect(screen.queryByText(/Fais le geste, l’étape suivante s’ouvrira/)).toBeNull();
+    expect(screen.queryByText(/Fais le geste, la suite s’ouvrira/)).toBeNull();
     unmount();
   });
 });

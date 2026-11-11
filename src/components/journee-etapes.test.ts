@@ -343,20 +343,21 @@ describe('l’écriture de la réplique suit les mots : 60 ms par mot, 3 s au pl
 });
 
 describe('la ligne d’aide du geste compte dans la lecture et tient sur une ligne (D-198 (6), D-205 (4), #788)', () => {
-  it('est courte : une ligne à 420 px, 45 caractères au plus (mesurée sur capture, voir l’écran)', () => {
+  it('est courte : une ligne à 420 px, 34 caractères au plus (mesurée sur le build : l’encadré fait 207 px)', () => {
     for (const etape of ETAPES_JOURNEE) {
       const ligne = ligneAideGeste(etape);
       // **Le contrôle mord** : l'ancienne phrase (« … sur la page : l’étape suivante s’ouvrira
-      // ensuite », 63 caractères) passait sur deux lignes à 420 px.
-      if (ligne !== null) expect(ligne.length, etape.titre).toBeLessThanOrEqual(45);
+      // ensuite », 63 caractères) et celle de l'exemple de D-205 (41) passent sur deux lignes à 420 px.
+      if (ligne !== null) expect(ligne.length, etape.titre).toBeLessThanOrEqual(34);
     }
-    expect('Fais le geste sur la page : l’étape suivante s’ouvrira ensuite.'.length).toBeGreaterThan(45);
+    expect('Fais le geste sur la page : l’étape suivante s’ouvrira ensuite.'.length).toBeGreaterThan(34);
+    expect('Fais le geste, l’étape suivante s’ouvrira'.length).toBeGreaterThan(34);
   });
 
   it('une étape avec geste a une ligne d’aide, une étape sans geste n’en a aucune', () => {
     for (const etape of ETAPES_JOURNEE) {
       if (etape.geste === undefined) expect(ligneAideGeste(etape), etape.titre).toBeNull();
-      else expect(ligneAideGeste(etape), etape.titre).toMatch(/l’étape suivante s’ouvrira/);
+      else expect(ligneAideGeste(etape), etape.titre).toMatch(/la suite s’ouvrira/);
     }
   });
 
