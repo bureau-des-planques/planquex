@@ -349,7 +349,8 @@ describe('Une forme v14 complète se lit sans perte (v14 → v18, #492)', () => 
     expect(migre.tutorielVu).toBe(true);
     expect(migre.pasAPasCombatVu).toBe(true);
     expect(migre.partie).toEqual(etatV14().partie);
-    expect(migre.derniere).toEqual(etatV14().derniere);
+    // `derniere` n'est plus persistée (v19, #738, D-183) : le champ d'un état v14 est ignoré.
+    expect(migre).not.toHaveProperty('derniere');
     expect(migre.difficulte).toBe('difficile');
 
     // Ce qui est arrivé après v14 : les défauts de chaque palier, pas de perte.
@@ -395,13 +396,14 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
 
   it('déclare la version 18', () => {
     // 11 : le reset de la beta (D-130). 12 : les deux sons et leur réglage (D-137, #378).
-    // 13 : la dernière partie terminée, pour la revoir (#366).
+    // 13 : la dernière partie terminée (#366) — retirée en 19 (#738, D-183).
     // 14 : la difficulté de la Direction (#251, D-145).
     // 15 : `rng` quitte la forme persistée — le serveur tire l'Arrivage (#651, D-179).
     // 16 : la date de la dernière lecture de la Collection, son cache (#493, D-179 (3)).
     // 17 : la file d'intentions du Deck (#491, D-153 (3), D-179 (4)).
     // 18 : le drapeau d'import du Deck local dans le compte (#492, D-153 (1)).
-    expect(STORAGE_VERSION).toBe(18);
+    // 19 : `derniere` quitte la forme persistée (#738, D-183).
+    expect(STORAGE_VERSION).toBe(19);
   });
 
   it('v10 -> v11 : la progression part, le testeur reste (D-130, #347)', () => {
@@ -949,16 +951,36 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
       rng: 4242
     };
     const migre = migratePersisted(v12, 12);
-    expect(migre.derniere).toBeNull();
+    expect(migre).not.toHaveProperty('derniere');
     expect(migre.owned).toEqual({ 'sse-psychologue': 2 });
     expect(migre.sons).toBe(false);
     expect(migre).not.toHaveProperty('rng');
   });
 
-  it('une dernière partie abîmée est écartée à la migration, sans toucher au reste', () => {
-    const migre = migratePersisted({ name: 'Testeur', derniere: { mode: 'solo', verdict: 'oups' } }, 12);
-    expect(migre.derniere).toBeNull();
-    expect(migre.name).toBe('Testeur');
+  it('une sauvegarde v18 qui porte `derniere` se lit sans erreur : le champ est ignoré et jamais réécrit (v18 → v19, #738, D-183)', () => {
+    const derniere = { mode: 'solo', graine: 1, verdict: { vainqueur: 'player', raison: 'interventions', tours: 9 } };
+    const v18 = {
+      name: 'Testeur v18',
+      owned: { 'sse-psychologue': 2 },
+      deck: ['sse-psychologue'],
+      packsOpened: 4,
+      sons: false,
+      partie: null,
+      derniere,
+      difficulte: 'difficile'
+    };
+    const migre = migratePersisted(v18, 18);
+    // Le cas fautif : une migration qui laisserait `derniere` dans l'état le réécrirait ensuite.
+    expect(migre).not.toHaveProperty('derniere');
+    expect(migre.name).toBe('Testeur v18');
+    expect(migre.owned).toEqual({ 'sse-psychologue': 2 });
+    expect(migre.difficulte).toBe('difficile');
+    // Et la forme persistée ne l'écrit plus.
+    expect(partializeState({ ...useStore.getState(), ...(migre as object), derniere } as never)).not.toHaveProperty(
+      'derniere'
+    );
+    // Même sur un état plus ancien : le champ est retiré quel que soit l'âge.
+    expect(migratePersisted({ name: 'Testeur', derniere }, 12)).not.toHaveProperty('derniere');
   });
 
   it('un état v13 n’a pas de difficulté : Normal, et rien d’autre ne bouge (v13 → v14, #251)', () => {
@@ -970,7 +992,6 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
       deck: ['sse-psychologue'],
       packsOpened: 7,
       sons: false,
-      derniere: null,
       rng: 4242
     };
     const migre = migratePersisted(v13, 13);

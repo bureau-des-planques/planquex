@@ -178,8 +178,8 @@ export function Installation() {
           </li>
           <li>
             <strong>Aujourd’hui, côté serveur</strong> : ton compte, ton profil (pseudo, service, intitulé), ce que tu
-            écris sur le mur, le déroulé de tes combats terminés. <strong>Bientôt en plus</strong> : ton Deck et ta
-            Collection, sur ton compte — tu les retrouveras après un changement d’appareil.
+            écris sur le mur. <strong>Bientôt en plus</strong> : ton Deck et ta Collection, sur ton compte — tu les
+            retrouveras après un changement d’appareil.
           </li>
         </ul>
         <p className="muted m-0 max-w-[62ch] text-[0.86rem]">

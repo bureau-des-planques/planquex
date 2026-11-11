@@ -22,13 +22,7 @@ export const CONFIRMATION = 'remettre à zéro la beta';
 
 /** Ce qui est vidé, ce qui est gardé, et ce que le geste ne touche jamais (le compte rendu le dit). */
 export const PERIMETRE = Object.freeze({
-  vides: [
-    'public.votes',
-    'public.commentaires',
-    'public.postits',
-    'public.collection',
-    'public.deck'
-  ],
+  vides: ['public.votes', 'public.commentaires', 'public.postits', 'public.collection', 'public.deck'],
   gardes: ['public.comptes'],
   intactes: ['admin.migrations', 'public.annonces_discord', 'auth.users', 'public.profils (si elle existe, #325)']
 });

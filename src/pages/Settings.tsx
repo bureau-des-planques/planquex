@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-react';
+import { ClipboardPaste, Copy, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { marquerGeste, oublierGestes } from '@/components/journee-gestes';
 import { rejouerJournee } from '@/components/journee-etape';
@@ -41,8 +41,6 @@ export const CATEGORIES_REGLAGES = [
   'Les règles',
   'Pas-à-pas du combat',
   'Sauvegarde',
-  'Traces de combat',
-  'Revoir une partie',
   'Données locales',
   'Confidentialité',
   'Version'
@@ -179,7 +177,7 @@ export function Settings() {
             </ul>
             <p className="m-0 max-w-[64ch] text-[0.86rem] text-ink-muted">
               {estApprouve(compte)
-                ? 'Ton compte est validé : les post-its, les pouces et les traces de combat sont ouverts.'
+                ? 'Ton compte est validé : les post-its et les pouces sont ouverts.'
                 : 'Ton compte attend la validation de Bastien : tu peux jouer et lire, pas encore écrire.'}
             </p>
             <div className="actions actions--tight">
@@ -329,8 +327,7 @@ export function Settings() {
             quatre lignes, et `impeccable` (line-length) le refusait dès que le texte tient
             sur des lignes de plus de 80 caractères. Le rendu du texte était le même avant et
             après le passage de Prettier (vérifié : `innerText` identique, sha1 égal) — c'est
-            la **largeur de lecture** qui manquait, pas le formateur. Même remède que la
-            section « Traces de combat » (#208). */}
+            la **largeur de lecture** qui manquait, pas le formateur. */}
         <p className="muted max-w-[62ch]">
           Ton Deck et ta Collection sont sur ton compte : ils te suivent sur un autre appareil, sans rien copier. La
           sauvegarde garde en plus ce qui reste dans ce navigateur — ton nom, tes réglages, les tutoriels vus, ta partie
@@ -369,26 +366,6 @@ export function Settings() {
             {message.texte}
           </p>
         )}
-      </section>
-
-      <section className="section panel" aria-labelledby="reglages-traces">
-        <h2 id="reglages-traces">Traces de combat</h2>
-        {/* `max-w-[56ch]` (et non 64) : depuis le texte à deux (D-105), les lignes à 64ch
-            dépassaient 80 caractères — `impeccable`, line-length, cliquet #208. */}
-        <p className="muted max-w-[56ch]">
-          Les parties terminées sont gardées sous ton compte pour améliorer le jeu. Ni ton nom ni aucun texte libre n’y
-          figure (D-086, D-105).
-        </p>
-      </section>
-
-      <section className="section panel" aria-labelledby="reglages-rejeu">
-        <h2 id="reglages-rejeu">Revoir une partie</h2>
-        <p className="muted max-w-[56ch]">Ta dernière partie terminée, coup par coup.</p>
-        <div className="actions actions--tight">
-          <Link className="button" to="/rejeu">
-            <History size={16} /> Revoir ma dernière partie
-          </Link>
-        </div>
       </section>
 
       <section className="section panel" aria-labelledby="reglages-donnees">

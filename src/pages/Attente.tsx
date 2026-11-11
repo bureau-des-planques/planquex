@@ -61,7 +61,7 @@ export function Attente() {
         </h1>
         <p className="muted max-w-[64ch]">
           {approuve
-            ? 'Tu peux écrire : post-it, pouce, trace de combat. Merci d’être là.'
+            ? 'Tu peux écrire : post-it, pouce. Merci d’être là.'
             : 'Bastien valide les comptes à la main. Tant que ton compte n’est pas validé, le jeu reste fermé : il s’ouvrira à son approbation.'}
         </p>
       </section>

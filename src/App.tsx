@@ -34,7 +34,6 @@ import { deverrouiller } from '@/audio/sons';
  */
 const CollectionDeck = lazy(() => import('@/pages/CollectionDeck').then((m) => ({ default: m.CollectionDeck })));
 const Battle = lazy(() => import('@/pages/Battle').then((m) => ({ default: m.Battle })));
-const Rejeu = lazy(() => import('@/pages/Rejeu').then((m) => ({ default: m.Rejeu })));
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })));
 const Comite = lazy(() => import('@/pages/Comite').then((m) => ({ default: m.Comite })));
 const PauseCafe = lazy(() => import('@/pages/PauseCafe').then((m) => ({ default: m.PauseCafe })));
@@ -151,7 +150,6 @@ export function App() {
           <Route path="comite" element={<Comite />} />
           <Route path="comite/suivi" element={<Suivi />} />
           <Route path="settings" element={<Settings />} />
-          <Route path="rejeu" element={<Rejeu />} />
           {/* Le compte : son état d'attente, puis l'administration (D-088). */}
           <Route path="attente" element={<Attente />} />
           <Route path="administration" element={<Administration />} />

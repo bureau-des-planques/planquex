@@ -2,14 +2,14 @@
  * La page de confidentialité — publique, et **hors de la garde des comptes**.
  *
  * Elle est exigée par Google pour publier l'application OAuth (`D-088`), et elle a une
- * raison propre : depuis D-088 on demande un compte, et depuis D-086 on garde la trace des
- * parties — solo comme à deux (D-105). Une page qui ne dit pas ce qu'on collecte serait un
+ * raison propre : depuis D-088 on demande un compte. Les parties terminées ne sont plus
+ * gardées (D-183, qui annule D-086 et D-105). Une page qui ne dit pas ce qu'on collecte serait un
  * mensonge par omission.
  *
  * Trois règles d'écriture, et elles ne bougeront pas :
  *
- * 1. **on écrit ce qu'on fait, pas ce qu'on aimerait faire** : les rubriques « Un compte »,
- *    « Ce que tu écris sur le mur » et « Tes parties terminées » correspondent à des colonnes
+ * 1. **on écrit ce qu'on fait, pas ce qu'on aimerait faire** : les rubriques « Un compte » et
+ *    « Ce que tu écris sur le mur » correspondent à des colonnes
  *    réellement écrites en base (`supabase/migrations/`) ;
  * 2. **aucun jargon** : pas de « données à caractère personnel », pas de « finalité
  *    légitime » — des phrases, et des exemples ;
@@ -48,14 +48,6 @@ const COLLECTE: Rubrique[] = [
       'Un post-it : son titre, son texte, l’écran concerné, la version du jeu, et le lien de capture si tu en mets un.',
       'Tes commentaires, et tes pouces (un par post-it, pour savoir combien de personnes sont d’accord).',
       'Ces textes sont visibles de tous les testeurs : c’est un mur, pas une boîte aux lettres.'
-    ]
-  },
-  {
-    titre: 'Tes parties terminées',
-    lignes: [
-      'Le déroulé de la partie, solo comme à deux : la graine de hasard, les deux Decks, les types de café et la suite des actions jouées.',
-      'Cela sert à voir comment le jeu est réellement joué, et où il coince.',
-      'Ni ton pseudo, ni ton adresse, ni aucun texte de ta part n’y figurent.'
     ]
   },
   {
@@ -104,7 +96,7 @@ const QUESTIONS: Rubrique[] = [
     titre: 'Voir, corriger, supprimer',
     lignes: [
       'Tu peux corriger ou retirer tes post-its depuis le mur, tant qu’ils n’ont pas été triés.',
-      'Tu peux retirer tes commentaires. Pour le reste — ton compte, tes parties enregistrées — demande-le nous.'
+      'Tu peux retirer tes commentaires. Pour le reste — ton compte — demande-le nous.'
     ]
   },
   {

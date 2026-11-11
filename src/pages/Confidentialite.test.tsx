@@ -10,9 +10,9 @@ import { Confidentialite, CONTACT } from '@/pages/Confidentialite';
  * Ce test garde trois choses, et chacune peut échouer :
  *
  * 1. la page se rend **sans** compte, sans base et sans configuration ;
- * 2. elle dit les trois familles de données qu'on collecte réellement — un compte, ce qu'on
- *    écrit sur le mur, le déroulé des parties, solo comme à deux (D-105) — parce qu'une page
- *    qui oublierait l'une des trois serait un mensonge par omission ;
+ * 2. elle dit les deux familles de données qu'on collecte réellement — un compte, ce qu'on
+ *    écrit sur le mur — et **ne promet plus** le déroulé des parties, retiré par D-183 (qui
+ *    annule D-105) : une page qui l'annoncerait encore mentirait dans l'autre sens ;
  * 3. elle donne un moyen d'écrire (l'adresse de contact), sans quoi on ne peut pas demander
  *    la suppression de ses données.
  *
@@ -32,14 +32,16 @@ describe('Confidentialité — la page publique', () => {
     expect(screen.getByRole('heading', { level: 1, name: /confidentialité/i })).toBeTruthy();
   });
 
-  it('nomme les trois familles de données réellement collectées', () => {
+  it('nomme les deux familles de données réellement collectées, et plus le déroulé des parties (D-183)', () => {
     rendre();
     // 1. le compte (Google ou courriel)
     expect(screen.getByText(/adresse de courriel et un identifiant technique/i)).toBeTruthy();
     // 2. ce qu'on écrit sur le mur
     expect(screen.getByText(/un post-it : son titre, son texte/i)).toBeTruthy();
-    // 3. le déroulé des parties, solo comme à deux (D-105)
-    expect(screen.getByText(/la graine de hasard, les deux Decks/i)).toBeTruthy();
+    // Le déroulé des parties n'est plus collecté (D-183) : la page ne le dit plus. Le contrôle
+    // mord : remettre la rubrique « Tes parties terminées » fait échouer cette ligne.
+    expect(screen.queryByText(/la graine de hasard, les deux Decks/i)).toBeNull();
+    expect(screen.queryByText(/Tes parties terminées/i)).toBeNull();
   });
 
   it('dit aussi ce qu’on ne fait pas, et donne un moyen d’écrire', () => {

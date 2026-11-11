@@ -31,9 +31,9 @@ describe('la table combats est supprimée (#738, D-183)', () => {
 
   it('`select * from public.combats` échoue : la relation n’existe pas', async () => {
     await expect(db.query('select * from public.combats')).rejects.toThrow(/relation "public.combats" does not exist/);
-    await expect(
-      avecAppareil(db, APPAREIL_A, () => db.query('select count(*) from public.combats'))
-    ).rejects.toThrow(/does not exist/);
+    await expect(avecAppareil(db, APPAREIL_A, () => db.query('select count(*) from public.combats'))).rejects.toThrow(
+      /does not exist/
+    );
   });
 
   it('ni la table, ni ses politiques RLS, ni son index ne survivent', async () => {

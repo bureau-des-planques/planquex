@@ -464,10 +464,19 @@ export const MUTATIONS = [
     ticket: 651,
     titre: 'la migration v15 garde `rng` dans la forme persistée',
     fichier: 'src/store/useStore.ts',
-    motif: 'const { rng: _ancienGenerateur, ...sansGenerateur } = state;',
-    remplacement: 'const sansGenerateur = state;',
+    motif: 'const { rng: _ancienGenerateur, derniere: _ancienneDerniere, ...sansGenerateur } = state;',
+    remplacement: 'const { derniere: _ancienneDerniere, ...sansGenerateur } = state;',
     tests: ['src/store/useStore.test.ts'],
     garde: 'le générateur du client reviendrait dans la sauvegarde, et le client croirait encore tirer ses Arrivages'
+  },
+  {
+    ticket: 738,
+    titre: 'la migration v19 garde `derniere` dans l’état lu',
+    fichier: 'src/store/useStore.ts',
+    motif: 'const { rng: _ancienGenerateur, derniere: _ancienneDerniere, ...sansGenerateur } = state;',
+    remplacement: 'const { rng: _ancienGenerateur, ...sansGenerateur } = state;',
+    tests: ['src/store/useStore.test.ts'],
+    garde: 'la dernière partie d’une sauvegarde v18 resterait dans le store, alors que « Revoir une partie » est retiré (D-183)'
   },
   {
     ticket: 666,

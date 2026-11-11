@@ -10,7 +10,7 @@ c'est surtout : **est-ce que ça donne envie de refaire une partie ?**
 
 Quand la beta ouvrira, les données de l'alpha seront remises à zéro. **Tu n'as pas à te réinscrire.**
 
-- **Ce qui part** : les traces de tes combats solo (le déroulé enregistré sur le serveur) et le **mur** (post-its, pouces, commentaires).
+- **Ce qui part** : le **mur** (post-its, pouces, commentaires).
 - **Ce qui reste** : **ton compte** — adresse de courriel, mot de passe et approbation. Rien à refaire, pas de nouvelle validation.
 - **Ta Collection et ton Deck** : ils vivent sur ton appareil, et ils repartent aussi avec la mise à jour du format de sauvegarde qui accompagne la beta. Crée ta sauvegarde (**Réglages → « Créer ma sauvegarde »**) si tu veux les garder.
 - **Une médaille** : chaque compte approuvé pendant l'alpha reçoit la **« Médaille de la période d'essai »**, posée au moment du reset. Elle ne se perd pas ensuite, et elle s'affiche dans **Réglages**, sous l'état de ton compte.
@@ -21,7 +21,7 @@ La date exacte sera annoncée avant le reset. Rien ne part sans que ce soit dit 
 
 - **Ton compte** : l'alpha s'ouvre par une connexion — **Google** en un clic, ou **courriel et
   mot de passe** — et le compte est **validé à la main**. En attendant, tu **joues et tu lis**
-  tout ; écrire sur le mur, voter et laisser la trace de tes combats s'ouvre une fois le compte
+  tout ; écrire sur le mur et voter s'ouvre une fois le compte
   approuvé (D-088). **Mot de passe oublié** : un lien part par courriel et rouvre l'écran du
   nouveau mot de passe ; la réponse ne dit jamais si l'adresse a un compte.
 - **Journée d'intégration** : cinq étapes — l'Arrivage, la Collection et le Deck, le combat,
@@ -65,8 +65,7 @@ Tu commences avec une Collection déjà garnie : tu peux composer un Deck et te 
   post-its) et ta partie en cours. Rien de cela ne part sur un serveur.
 - **Sur le serveur du jeu** : ton compte (adresse de courriel et identifiant technique), ton
   **profil** (pseudo, service, intitulé — D-148), ce que tu écris sur le mur (post-its,
-  commentaires, pouces), et le déroulé de tes combats solo terminés (graine, Decks, actions
-  jouées — sans ton pseudo ni ton adresse).
+  commentaires, pouces). Le déroulé de tes combats n'est plus envoyé (D-183).
 - **Bientôt, en plus, sur ton compte** : ta Collection et ton Deck, pour les retrouver après un
   changement d'appareil (D-153). Ça n'est pas encore livré.
 - La page **Confidentialité** (`/confidentialite`) dit tout cela en clair, et se lit sans compte.

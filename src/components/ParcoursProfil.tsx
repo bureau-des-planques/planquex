@@ -117,7 +117,7 @@ export function ParcoursProfil({ uid }: { uid: string }) {
             />
           </label>
           <p id="parcours-pseudo-aide" className="parcours__aide m-0">
-            {pseudo.length} sur 24 caractères. Il te suivra sur le mur et dans tes traces de combat.
+            {pseudo.length} sur 24 caractères. Il te suivra sur le mur.
           </p>
           <div className="actions actions--tight">
             <button type="submit" className="button button--primary" disabled={chargement || !pseudo.trim()}>

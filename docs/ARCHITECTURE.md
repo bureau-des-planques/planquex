@@ -34,7 +34,7 @@ copie prend vite du retard. Pour l'état réel, `ls <dossier>` ; pour les écran
 
 | Dossier | Ce qu'il porte |
 |---|---|
-| `scripts/preuves/` | ce qui **mesure** : captures, films, parties jouées, parcours, pesages, traces, `status` |
+| `scripts/preuves/` | ce qui **mesure** : captures, films, parties jouées, parcours, pesages, `status` |
 | `scripts/generateurs/` | ce qui **écrit** : `plan-dev`, `notes-versions`, `note-brouillon`, `index-decisions`, `problemes-connus`, `statut-mur`, `ouf`, `arrivage-serveur` |
 | `scripts/ci/` | la **chaîne** : chemins, état de `main`, format, durées, garde-fous, taille des paquets, dispatch, isolation, worktree, détecteur d'UI, lots gflow |
 | `scripts/ressources/` | ce qui **produit ou installe** ce que le jeu sert : icônes, sons, marques, import du mur, wizard d'illustration, installer, et deux wizards d'infra datés |
