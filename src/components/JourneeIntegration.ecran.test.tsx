@@ -627,10 +627,10 @@ describe('la reprise repart de la première étape non faite (#687)', () => {
       deck: ['atelier-joueur-de-flute']
     };
     // **Le rechargement** : l'étape et les gestes de session repartent de zéro, le store
-    // reste. Arrivage et visite du Deck sont faits, le combat ne l'est pas : on reprend à l'étape 3.
+    // reste. L'Arrivage est fait (store), la visite du Deck est un fait de session et repart de zéro :
+    // on reprend à l'étape 2 (D-205 (2)), pas à la 3 comme quand le Deck chargé était persisté.
     setupTestStore(etat);
     oublierGestes();
-    marquerGeste('deck');
     remettreJourneeAuDebut();
     const { unmount } = render(
       <MemoryRouter initialEntries={['/attente']}>
@@ -639,7 +639,7 @@ describe('la reprise repart de la première étape non faite (#687)', () => {
     );
     // **Le contrôle mord** : supprimer la reprise ferait tomber cette ligne (on lirait
     // « L’Arrivage ») ; c'est le critère 2 de #731, la reprise reste pour le rechargement.
-    expect(screen.getByRole('heading', { name: /Le combat/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
     unmount();
 
     // **« Revoir »**, même état : la reprise est ignorée, la Journée repart de l'étape 1.
