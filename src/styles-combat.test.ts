@@ -457,69 +457,167 @@ function declarationsDeBase(css: string, selecteur: string): Map<string, string>
 }
 
 /**
- * **L'écran large (≥ 900 px) : plateau à gauche, main entière à droite, pile d'actions sous la main**
- * (D-142 (4), D-193 (5), #750). Lu dans la feuille, média `(min-width: 900px)`.
- * Le contrôle mord : chaque règle est refusée dans sa forme fautive.
+ * **L'écran large (≥ 900 px) suit la composition du téléphone** (D-200, #790) : la table ronde centrée, la
+ * main rognée en bas de la fenêtre, « Fin du tour » flottant à droite. La colonne de droite de #750
+ * (plateau à gauche, main entière en haut de la colonne, pile d'actions dessous) n'existe plus. Lu dans la
+ * feuille, média `(min-width: 900px)` ; le média partagé porte la composition.
+ * Le contrôle mord : chaque règle est refusée dans sa forme fautive (l'ancienne règle de colonne).
  */
-describe('l’écran large : la main entière, la pile d’actions sous elle, la bulle sur la table (#750)', () => {
+describe('l’écran large : la composition du téléphone, plus de colonne de droite (D-200, #790)', () => {
   const LARGE = '(min-width: 900px)';
+  const PARTAGE = '(max-width: 639px), (min-width: 900px)';
 
-  /** Une pile d'actions posée **sous la main** (bas de la colonne), jamais au milieu de la main. */
-  function pileSousLaMain(css: string): boolean {
-    const decl = declarationsDansMedia(css, LARGE, '.battle .actions-flottantes');
-    return decl.get('top') === 'auto' && decl.get('bottom') !== undefined && decl.get('bottom') !== 'auto';
+  /** Les règles de **colonne** dans un média ≥ 900 px : la grille du plateau, la pile sous la main, la main entière. */
+  function reglesDeColonne(css: string): string[] {
+    const trouvees: string[] = [];
+    for (const corps of corpsDesMedias(css, LARGE)) {
+      const table = declarationsDe(corps, '.battle__table');
+      if (table.get('display') === 'grid' || table.has('grid-template-columns'))
+        trouvees.push('.battle__table en grille');
+      const consoleDeDroite = declarationsDe(corps, '.battle__console');
+      if (consoleDeDroite.has('grid-column') || consoleDeDroite.has('grid-row'))
+        trouvees.push('.battle__console en colonne');
+      const actions = declarationsDe(corps, '.battle .actions-flottantes');
+      if (actions.get('top') === 'auto') trouvees.push('pile d’actions sous la main');
+      if ((declarationsDe(corps, '.battle .hand').get('height') ?? '').includes('88 / 63'))
+        trouvees.push('main entière');
+      if (declarationsDe(corps, '.battle .inspecteur').get('position') === 'sticky')
+        trouvees.push('inspecteur en colonne');
+    }
+    return trouvees;
   }
 
-  /** La bulle ne dépasse pas la colonne du plateau : sa largeur suit `minmax(0, 1.15fr)`, sans `right: 0`. */
-  function bulleSurLaTable(css: string): boolean {
-    const decl = declarationsDansMedia(css, LARGE, '.battle .combat-superpose');
-    const largeur = decl.get('width') ?? '';
-    return largeur.includes('calc') && largeur.includes('1.15') && decl.get('right') === 'auto';
+  it('aucune règle de colonne dans le média ≥ 900 px', () => {
+    expect(reglesDeColonne(CSS)).toEqual([]);
+  });
+
+  it('le contrôle mord : l’ancienne grille à deux colonnes de #750 est refusée', () => {
+    const fautif =
+      '@media (min-width: 900px) { .battle__table { align-items: start; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }';
+    expect(reglesDeColonne(fautif)).toEqual(['.battle__table en grille']);
+  });
+
+  it('le contrôle mord : l’ancienne pile d’actions sous la main et la main entière sont refusées', () => {
+    const fautif =
+      '@media (min-width: 900px) { .battle .actions-flottantes { bottom: 1rem; top: auto; } .battle .hand { height: calc(var(--carte-w) * 88 / 63 + 1.2rem); } }';
+    expect(reglesDeColonne(fautif)).toEqual(['pile d’actions sous la main', 'main entière']);
+  });
+
+  it('le contrôle mord : l’inspecteur collé en haut d’une colonne (sticky) est refusé', () => {
+    const fautif = '@media (min-width: 900px) { .battle .inspecteur { position: sticky; top: 0.5rem; } }';
+    expect(reglesDeColonne(fautif)).toEqual(['inspecteur en colonne']);
+  });
+
+  it('la composition du téléphone est celle du média partagé : table zoomée, main rognée, voile du nom', () => {
+    expect(declarationsDansMedia(CSS, PARTAGE, '.battle__table').get('overflow')).toBe('hidden');
+    expect(declarationsDansMedia(CSS, PARTAGE, '.battle .board').get('transform')).toContain('rotateX(4deg)');
+    expect(declarationsDansMedia(CSS, PARTAGE, '.battle .hand').get('height')).toBe('3.5rem');
+    expect(declarationsDansMedia(CSS, PARTAGE, '.battle .hand .card--en-main .card__face').get('justify-content')).toBe(
+      'flex-start'
+    );
+  });
+
+  /**
+   * **Le nom de la carte de main se lit dans la bande de 56 px** (#744, D-164 (1)) : la face se remplit par le
+   * haut et le nom est au plancher `--fs-xs` (11,2 px), pas `--fs-2xs`. Le contrôle mord : la règle d'avant
+   * (voile en `top: 0` mais face remplie par le bas, nom en `--fs-2xs`) est refusée.
+   */
+  function nomDeMain(css: string): { face: string | undefined; taille: string | undefined } {
+    return {
+      face: declarationsDansMedia(css, PARTAGE, '.battle .hand .card--en-main .card__face').get('justify-content'),
+      taille: declarationsDansMedia(css, PARTAGE, '.battle .hand .card--en-main .card__name').get('font-size')
+    };
   }
 
-  /** La main garde la hauteur de la carte **et** son inclinaison : une marge de 1.2 rem, plus le bas. */
-  function mainEntiere(css: string): boolean {
-    const decl = declarationsDansMedia(css, LARGE, '.battle .hand');
-    const hauteur = decl.get('height') ?? '';
-    return hauteur.includes('88 / 63') && hauteur.includes('1.2rem');
+  it('le nom de la carte de main est en tête et au plancher --fs-xs, pas --fs-2xs (#744)', () => {
+    const { face, taille } = nomDeMain(CSS);
+    expect(face).toBe('flex-start');
+    expect(taille).toBe('var(--fs-xs)');
+    expect(CSS).toMatch(/--fs-xs:\s*0\.7rem;/);
+  });
+
+  it('le voile de la main passe devant l’illustration, à toutes les largeurs (#744)', () => {
+    expect(declarationsDeBase(CSS, '.card--en-main .card__voile').get('z-index')).toBe('1');
+    // Le contrôle mord : sans la règle, la lecture rend `undefined`.
+    expect(
+      declarationsDeBase('.card__voile { position: relative; }', '.card--en-main .card__voile').get('z-index')
+    ).toBeUndefined();
+  });
+
+  it('le contrôle mord : un nom en --fs-2xs, ou une face remplie par le bas, est refusé (#744)', () => {
+    const fautif =
+      '@media (max-width: 639px), (min-width: 900px) { .battle .hand .card--en-main .card__name { font-size: var(--fs-2xs); } }';
+    const { face, taille } = nomDeMain(fautif);
+    expect(taille).not.toBe('var(--fs-xs)');
+    expect(face).not.toBe('flex-start');
+  });
+
+  it('le téléphone ne bouge pas : la main reste à 3,5 rem dans le média partagé', () => {
+    expect(declarationsDansMedia(CSS, PARTAGE, '.battle .hand').get('height')).toBe('3.5rem');
+    expect(declarationsDansMedia(CSS, '(max-width: 639px)', '.board').get('padding')).toBe('0.05rem');
+  });
+
+  /** La bande de la main sur bureau : 7 % de la hauteur, entre 56 px (3,5 rem) et 72 px (4,5 rem). */
+  function bandeDeMain(css: string): { jeton: string | undefined; hauteur: string | undefined } {
+    const corps = corpsDesMedias(css, LARGE).join('\n');
+    return {
+      jeton: declarationsDe(corps, '.app-shell:has(.battle)').get('--main-bande'),
+      hauteur: declarationsDe(corps, '.battle .hand').get('height')
+    };
   }
 
-  it('la pile d’actions est posée sous la main en écran large (top auto, bottom 1 rem)', () => {
-    expect(pileSousLaMain(CSS)).toBe(true);
+  it('la main de bureau montre une bande de 56 à 72 px, qui suit la hauteur de la fenêtre', () => {
+    const { jeton, hauteur } = bandeDeMain(CSS);
+    expect(jeton).toBe('clamp(3.5rem, 7dvh, 4.5rem)');
+    expect(hauteur).toBe('var(--main-bande)');
   });
 
-  it('la bulle du tour tient la colonne du plateau, pas la largeur de l’écran', () => {
-    expect(bulleSurLaTable(CSS)).toBe(true);
+  it('le contrôle mord : une main entière ou une bande de 8 rem est refusée', () => {
+    const fautif =
+      '@media (min-width: 900px) { .app-shell:has(.battle) { --main-bande: 8rem; } .battle .hand { height: 9rem; } }';
+    expect(bandeDeMain(fautif).jeton).not.toBe('clamp(3.5rem, 7dvh, 4.5rem)');
+    expect(bandeDeMain(fautif).hauteur).not.toBe('var(--main-bande)');
   });
 
-  it('la main a sa hauteur entière : la carte, son inclinaison et une marge sous les cartes du bord', () => {
-    expect(mainEntiere(CSS)).toBe(true);
+  it('la table est un rond centré dont le diamètre suit la hauteur de la fenêtre', () => {
+    const corps = corpsDesMedias(CSS, LARGE).join('\n');
+    expect(declarationsDe(corps, '.app-shell:has(.battle)').get('--table-d')).toBe('calc(91dvh - 8.3rem)');
+    expect(declarationsDe(corps, '.battle .board').get('width')).toBe('min(100%, var(--table-d))');
+    expect(declarationsDe(corps, '.battle .board').get('align-self')).toBe('center');
+    expect(declarationsDe(corps, '.battle .board::after').get('aspect-ratio')).toBe('1');
   });
 
-  it('le contrôle mord : une pile d’actions au milieu de la colonne (top 50 %) est refusée', () => {
-    const fautif = '@media (min-width: 900px) { .battle .actions-flottantes { top: 50%; bottom: auto; } }';
-    expect(pileSousLaMain(fautif)).toBe(false);
-  });
-
-  it('le contrôle mord : une bulle pleine largeur, qui recouvre la main, est refusée', () => {
-    const fautif = '@media (min-width: 900px) { .battle .combat-superpose { left: 0.5rem; right: 0.5rem; } }';
-    expect(bulleSurLaTable(fautif)).toBe(false);
-  });
-
-  it('le contrôle mord : une main sans marge du bas (la hauteur de la carte seule) est refusée', () => {
-    const fautif = '@media (min-width: 900px) { .battle .hand { height: calc(var(--carte-w) * 88 / 63 + 0.4rem); } }';
-    expect(mainEntiere(fautif)).toBe(false);
+  it('« Fin du tour » flotte à droite : la pile garde la règle de base (milieu, à droite), aucune surcharge de bureau', () => {
+    expect(declarationsDansMedia(CSS, LARGE, '.battle .actions-flottantes').size).toBe(0);
+    const base = declarationsDeBase(CSS, '.actions-flottantes');
+    expect(base.get('right')).toBe('0.5rem');
+    expect(base.get('top')).toBe('50%');
   });
 
   it('les piles restent entières sur les côtés de la table : aucun décalage négatif en écran large', () => {
-    const decl = declarationsDansMedia(CSS, LARGE, '.battle .piles');
-    for (const valeur of [decl.get('left'), decl.get('right')]) {
-      expect(valeur ?? '').not.toMatch(/^-/);
+    for (const selecteur of [
+      '.battle .board__side.is-direction .piles',
+      '.battle .board__side:not(.is-direction) .piles'
+    ]) {
+      const decl = declarationsDansMedia(CSS, LARGE, selecteur);
+      expect(decl.size).toBeGreaterThan(0);
+      for (const valeur of [decl.get('left'), decl.get('right')]) {
+        expect(valeur ?? '').not.toMatch(/^-/);
+      }
     }
   });
 
-  it('le téléphone ne bouge pas : la main reste à 3,5 rem dans le média `(max-width: 639px)`', () => {
-    expect(declarationsDansMedia(CSS, '(max-width: 639px)', '.battle .hand').get('height')).toBe('3.5rem');
+  it('le contrôle mord : une pile à moitié sortie (left: -1.7rem) est refusée', () => {
+    const fautif = '@media (min-width: 900px) { .battle .board__side.is-direction .piles { left: -1.7rem; } }';
+    expect(declarationsDansMedia(fautif, LARGE, '.battle .board__side.is-direction .piles').get('left')).toMatch(/^-/);
+  });
+
+  it('l’inspecteur flotte à côté de la carte : position posée par l’écran, hauteur bornée au-dessus de la main', () => {
+    const decl = declarationsDansMedia(CSS, LARGE, '.battle .inspecteur');
+    expect(decl.get('left')).toBe('var(--inspecteur-gauche, 1rem)');
+    expect(decl.get('top')).toBe('var(--inspecteur-haut, 5rem)');
+    expect(decl.get('max-height')).toContain('var(--main-bande');
+    expect(decl.get('position')).toBeUndefined();
   });
 });
 
@@ -584,26 +682,25 @@ describe('la bulle du tour garde 8 px de rembourrage vertical (#784)', () => {
 });
 
 /**
- * **La bulle ne recouvre pas les piles sur bureau** (#784) : à 1280 × 800 elle allait de 24 à 676 px
- * alors que le Deck de la Direction est à 554–632 px : `text-occlusion` (« Deck » couvert à 100 %),
- * le constat du run #844 de `main`. Sa largeur retire donc la place des piles (10,5 rem).
+ * **La bulle ne recouvre pas les piles sur bureau** (#784, D-200) : à 1280 × 800 elle allait de 24 à 676 px
+ * alors que le Deck de la Direction est à 554–632 px : `text-occlusion` (« Deck » couvert à 100 %), le
+ * constat du run #844 de `main`. Depuis D-200 la bulle est posée dans la marge à gauche de la table
+ * ronde (elle recouvrait le Banc de la Direction quand elle était au-dessus du rond : #790).
  */
-describe('sur bureau, la bulle du tour laisse la place des piles (#784)', () => {
+describe('sur bureau, la bulle du tour laisse la place des piles (#784, D-200)', () => {
   function largeurBureau(feuille: string): string | undefined {
-    const sans = feuille.replace(/\/\*[\s\S]*?\*\//g, '');
-    const debut = sans.lastIndexOf('@media (min-width: 900px)');
-    const bloc = sans.slice(debut);
-    return bloc.match(/\.battle \.combat-superpose \{[^}]*?width:\s*([^;]+);/)?.[1].trim();
+    return declarationsDansMedia(feuille, '(min-width: 900px)', '.battle .combat-superpose').get('width');
   }
 
-  it('la largeur retire 10,5 rem à la colonne du plateau', () => {
-    expect(largeurBureau(CSS)).toMatch(/- 10\.5rem\)$/);
+  it('la bulle tient dans la marge à gauche de la table : sa largeur retire le rond (--table-d / 2)', () => {
+    expect(largeurBureau(CSS)).toMatch(/50% - var\(--table-d\) \/ 2/);
+    expect(declarationsDansMedia(CSS, '(min-width: 900px)', '.battle .combat-superpose').get('left')).toBe('0.75rem');
   });
 
   // Sans ce cas, l'assertion ne garderait rien.
   it("le contrôle mord : la largeur d'avant (colonne entière) est refusée", () => {
     const fautif =
       '@media (min-width: 900px) { .battle .combat-superpose { right: auto; width: calc((100% - 0.85rem) * 1.15 / 2.15 - 0.5rem); } }';
-    expect(largeurBureau(fautif)).not.toMatch(/- 10\.5rem\)$/);
+    expect(largeurBureau(fautif)).not.toMatch(/50% - var\(--table-d\) \/ 2/);
   });
 });

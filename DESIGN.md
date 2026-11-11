@@ -382,6 +382,10 @@ plateau (`.card--plateau`).
 > 360 × 640, 390 × 664 et 412 × 810 ; plateau de 425 à 676 px selon le gabarit ; défilement **0**
 > partout, PC et grand écran compris (main non rognée : 149–198 px). Voir `docs/preuves/combat-d193-2026-11-09/`.
 >
+> **Amendé le 10/11/2026 (D-200, #790)** : à partir de 900 px, le combat suit **la même composition** que le
+> téléphone (table ronde centrée, main rognée en bas, « Fin du tour » flottant à droite) ; la colonne de droite
+> de #750 n'existe plus, et la main de bureau est rognée aussi (bande de 56 px à 800 de haut, 72 px à 1080).
+
 > **Pendant la Journée d'intégration (#778, D-195 (5), décision du propriétaire du 10/11/2026)** : la tête
 > du Chef de cabinet est **discrète** sur `/battle` — 56 px, coin bas gauche, au-dessus de la main
 > (`.journee__scene--discrete`), la réplique sur **une ligne** rognée (`.journee__ligne`) ; **aucun voile,
@@ -413,9 +417,9 @@ Les tailles sont celles de l'écran, pas celles de la maquette : **Poste 96 px**
 | Piste d'Interventions | `.piste` | **horizontale**, entre les deux camps : le nom de chaque camp et trois hexagones (l'adversaire à gauche, toi à droite) ; l'or marque une Intervention acquise. Au centre, la **capsule de score** dit `0 — 0` et le seuil une fois (`sur 3`, D-166) ; les noms de camps sortent vers les bords. **Une** cible `data-pas-a-pas="interventions"`, sur le conteneur. |
 | Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (72 px, D-157), inclinées, qui ne se chevauchent que quand la largeur l'exige ; la carte se soulève au survol et au focus (pas sous « Mouvement réduit » : c'est alors le panneau de l'inspecteur qui s'ouvre). Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
 | Pose | `.pose` | une carte **choisie** ouvre un panneau sous la main qui la nomme et donne **où** la jouer : « Poser au Poste », « Mettre au Banc 2 », « Jouer cet Objet ». |
-| Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir** (D-121). Chaque carte du Poste et du Banc est un `role="button"` nommé par le Planqué entier (`CarteSurvolable`, `InspecteurCombat.tsx`), et **décrit** en permanence par « x sur y de Stress. Conditions. » (`aria-describedby`, #525). À la fermeture du panneau, le focus revient à ce qui l'avait à l'ouverture (la carte, ou « Rotation ») ; ouvert au focus d'une carte de la main (« Mouvement réduit »), le panneau ne prend pas le focus. La lecture est une infobulle `role="tooltip"` : 300 ms à la souris seule (au tactile le tap ouvre le panneau, pas l'infobulle), aucun élément focusable, Échap la ferme. Posée dans l'écran `.battle`, hors du plateau, à la verticale de sa carte (au-dessus pour **mes** cartes quand elle y tient — dessous, elle couvrait ma main et la barre ; pour celles de la Direction, sous la carte ; et le côté se corrige **une fois l'infobulle mesurée**, l'estimation de 220 px ne suffisant pas, #525) et bornée à la fenêtre (8 px de marge), 17 rem de large au plus — pas dans `body`, où ses règles et les jetons `--scene-*` ne portaient pas : elle y tombait nue au bas du document et faisait défiler le combat de 177 px (D-103). Le panneau **non modal**, sans voile, montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse (`top: --inspecteur-haut`, posé sous la carte décrite, et jamais plus haut que 45 % de la fenêtre) ; à partir de 900 px, colonne collée dans la console. |
+| Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir** (D-121). Chaque carte du Poste et du Banc est un `role="button"` nommé par le Planqué entier (`CarteSurvolable`, `InspecteurCombat.tsx`), et **décrit** en permanence par « x sur y de Stress. Conditions. » (`aria-describedby`, #525). À la fermeture du panneau, le focus revient à ce qui l'avait à l'ouverture (la carte, ou « Rotation ») ; ouvert au focus d'une carte de la main (« Mouvement réduit »), le panneau ne prend pas le focus. La lecture est une infobulle `role="tooltip"` : 300 ms à la souris seule (au tactile le tap ouvre le panneau, pas l'infobulle), aucun élément focusable, Échap la ferme. Posée dans l'écran `.battle`, hors du plateau, à la verticale de sa carte (au-dessus pour **mes** cartes quand elle y tient — dessous, elle couvrait ma main et la barre ; pour celles de la Direction, sous la carte ; et le côté se corrige **une fois l'infobulle mesurée**, l'estimation de 220 px ne suffisant pas, #525) et bornée à la fenêtre (8 px de marge), 17 rem de large au plus — pas dans `body`, où ses règles et les jetons `--scene-*` ne portaient pas : elle y tombait nue au bas du document et faisait défiler le combat de 177 px (D-103). Le panneau **non modal**, sans voile, montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse (`top: --inspecteur-haut`, posé sous la carte décrite, et jamais plus haut que 45 % de la fenêtre) ; **à partir de 900 px (D-200), panneau flottant de 18 rem posé à côté de la carte décrite** — à droite si la place existe jusqu'à la pile d'actions, sinon à gauche (`placerPanneau`, `InspecteurCombat.tsx`) —, aligné sur le haut de la carte, la hauteur bornée **au-dessus de la bande de la main** : il ne recouvre ni la main rognée ni « Fin du tour », ne prend ni voile ni piège à focus, Échap le ferme. Choisi plutôt qu'un coin fixe parce que la table occupe le centre et que les piles tiennent deux coins : à côté de la carte, la fiche se lit sans quitter des yeux ce qu'elle décrit. |
 | Barre d'action | `.combat-barre` | **collante** au-dessus de la navigation — **au-dessus de 640 px de large seulement** : sous 640 px (donc à la cible de 420 px de D-060) elle repasse en `position: static` et se range sous la main, sinon elle remontait par-dessus le bas de la main (#289, écart **assumé**, `src/styles.css`). Elle porte la **dernière ligne du journal**, puis la relève ou le choix en attente, la ligne « Hors de portée du café : … », les gestes du Poste (café, Rotation, Talent), les Pressions et **Fin du tour** (vert quand c'est à toi ; **ardoise à filet vert quand une Pression est jouable**, pour qu'un seul bouton plein — la Pression — porte l'action, et la rangée des gestes s'écarte alors de 8 px). En fin de partie, elle porte **« Nouveau combat »** (bouton principal) sous la ligne « Rien à faire ». Une zone `aria-live` invisible y répète la dernière ligne du journal pour les lecteurs d'écran ; le verdict du bandeau du haut est une alerte. C'est la cible `poste-actions` du pas-à-pas. |
-| Écran large (≥ 900 px) | `.battle__table` | la table à gauche, la console (inspecteur, main, pose) à droite. |
+| Écran large (≥ 900 px) | `.battle__table` | **la même composition que le téléphone** (D-200, #790) : la table ronde centrée, la main rognée au bas de la fenêtre, « Fin du tour » flottant à droite. Plus de colonne de droite ni de grille : voir §2.6 bis et §2.7. |
 
 Le **secondaire** est derrière le `⋯` : Journal (les 14 dernières lignes), Partie à deux (un code
 à se passer, sans serveur), Règles (le dialogue des Conditions), Abandonner (quand le forfait est
@@ -638,7 +642,7 @@ trombones, feuilles) — ce sont des assets, et l'univers est l'atelier MRO (D-0
 
 ---
 
-### 2.6 bis La table haute ronde (D-193, 09/11/2026 — téléphone)
+### 2.6 bis La table haute ronde (D-193, 09/11/2026 — téléphone ; D-200, 10/11/2026 — bureau)
 
 Le plateau est une **table haute ronde de pause café**, vue de trois quarts, **caméra zoomée dessus**
 (référence : l'écran de combat d'un TCG mobile). Règles dans `src/styles.css`, fin de feuille :
@@ -652,8 +656,24 @@ Le plateau est une **table haute ronde de pause café**, vue de trois quarts, **
 | Ouverture | `.board--ouverture` : zoom de 700 ms sur la table, uniquement pour un combat neuf (#746) ; les Entrants arrivent dos visible (`.entrant__verso`) puis se retournent (`rotateY`) |
 | Animations | pioche, pose adverse, évolution (`.vol-effet`, `.evolution-flash`) : 800 ms au plus, `transform`/`opacity` seulement, coupées sous « Mouvement réduit » (#748) |
 
+**Bureau (≥ 900 px, D-200, #790).** Une seule composition : les règles ci-dessus (média partagé
+`(max-width: 639px), (min-width: 900px)`) s'y appliquent, la colonne de #750 a disparu. Ce que la largeur change, en
+fin de feuille, sous `@media (min-width: 900px)` :
+
+| Élément | Règle de bureau |
+|---|---|
+| Table | un **rond**, pas une ellipse plus large que l'écran : `.battle .board` mesure `min(100%, --table-d)` avec `--table-d = 91dvh − 8,3 rem` (595 px à 800 de haut, 850 à 1080) ; `::after` garde `aspect-ratio: 1`, centré |
+| Poste, Banc | formule de D-158 avec 17 rem réservés au lieu de 15 (la bande de la main rend de la place, mais 15 rem faisait défiler de 6 px à 1280 × 800) : Poste 120 px à 800 de haut, 176 à 1080 |
+| Main | `--main-bande = clamp(3,5 rem, 7dvh, 4,5 rem)` : **56 px à 800, 72 px à 1080**. La carte de main grandit avec la fenêtre (72 → 128 px) ; la bande garde ainsi environ un tiers de la carte visible, nom et coût lisibles. 20 px sous la main, comme sur téléphone (D-094 (3)) |
+| Piles | **entières**, sur les côtés de la table (Direction à gauche en haut, toi à droite en bas, à 0,4 rem du bord) : la place existe, un décompte à moitié sorti de la fenêtre ne se lit pas |
+| « Fin du tour » | la règle de base : milieu, bord droit de `.battle__table` ; aucune surcharge de bureau |
+| Bulle du tour | centrée au-dessus de la table, `min(34 rem, --table-d − 13 rem, 100 % − 26 rem)` : ni sur les piles de la Direction, ni sur la pile d'actions |
+| Inspecteur | panneau flottant non modal à côté de la carte (voir §2.4) |
+
+La bande 640–899 px n'est pas tranchée par D-200 : elle garde sa disposition d'avant.
+
 **Non prouvé** : le défilement à 0 sur les six gabarits (`npm run capturer`) et le rendu de
-l'évolution en navigateur ; l'écran de bureau (≥ 900 px) n'est pas refait (#750).
+l'évolution en navigateur ; le rendu visuel de la table de bureau (captures prises, **non vues**).
 
 ### 2.7 Téléphone, portrait, paysage et PC (D-142, 28/10/2026)
 
@@ -671,8 +691,8 @@ qui suit est ce que `src/styles.css` fait de chacun.
 | Petit téléphone | `max-width: 399.98px` | « Conditions » ne garde que son **icône** (libellé masqué, toujours nom accessible) : « Tour N · à toi » n'est plus coupé, et le camp qui joue ne se lit plus par la seule teinte du liseré |
 | Très court | `max-height: 700px` (portrait) | le titre « Ta main » cède sa ligne (le compte reste dans la fiche) ; Banc 52 px, main 60 px |
 | Paysage de téléphone | `orientation: landscape` et `max-height: 600px` | plateau à gauche, **main et barre d'action** à droite ; un camp sur **une** rangée (Poste 80, Banc 52, fiche) ; la console défile en elle-même ; l'inspecteur est une colonne, pas une feuille basse ; hors combat, l'en-tête se serre et la barre du bas met icône et libellé côte à côte |
-| Écran large | `min-width: 900px`, ou paysage ≥ 600 px | plateau à gauche, console à droite, barre d'action **dans** la console |
-| PC | `min-width: 1200px` et `min-height: 700px` | le combat prend 1360 px de large ; Poste, Banc et main **grandissent avec la hauteur** (`clamp` : planchers de D-157, plafonds de D-158 — Poste 11 rem, Banc 7 rem, main 8 rem) ; la console porte sous la barre les **12 dernières lignes du journal** (≥ 900 px, D-158) ; la barre du haut reste, c'est la navigation |
+| Écran large | `min-width: 900px` | **la composition du téléphone** (D-200) : table ronde centrée, main rognée (bande `--main-bande`), « Fin du tour » flottant à droite. Le paysage de téléphone (ci-dessus) garde sa colonne |
+| PC | `min-width: 1200px` et `min-height: 700px` | le combat prend 1360 px de large ; Poste, Banc et carte de main **grandissent avec la hauteur** (`clamp` : planchers de D-157, plafonds de D-158 — Poste 11 rem, Banc 7 rem, carte 8 rem) ; la **bande** de la main suit aussi la hauteur (56 → 72 px, D-200) ; la console de journal n'existe plus (D-182) ; la barre du haut reste, c'est la navigation |
 | Grand écran | `min-width: 1440px` | la coquille passe de 1080 à 1280 px (`--shell-max`, lu aussi par la barre du bas) : une colonne de cartes de plus en Collection et au Deck |
 | Partout | — | `min-height: 100dvh` ; encoches (`env(safe-area-inset-*)`) sur l'en-tête et les bords ; **44 px** pour un bouton, un champ, une case de Réglages, un onglet du comité, et la zone tactile du `+` d'une carte (la pastille garde 24 px) |
 

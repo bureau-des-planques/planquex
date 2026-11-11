@@ -1239,7 +1239,7 @@ export function Battle() {
                     >
                       {definition && (
                         <div className="hand__visuel" aria-hidden>
-                          <CardView card={definition} calme plateau />
+                          <CardView card={definition} calme plateau enMain />
                         </div>
                       )}
                       <button

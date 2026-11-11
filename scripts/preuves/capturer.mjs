@@ -263,6 +263,27 @@ const LARGEUR_TELEPHONE_MAX = 639;
 const estTelephonePortrait = (viewport) => viewport.width <= LARGEUR_TELEPHONE_MAX && viewport.height > viewport.width;
 
 /**
+ * **Le bureau (≥ 900 px) suit la composition du téléphone** (D-200, #790) : la main y est rognée au bas de
+ * la fenêtre, comme sur téléphone. Deux règles de téléphone s'y étendent, et deux seulement :
+ * - **la hauteur visible de la main** — mais pas en 52–60 px fixes : sur bureau la bande suit la fenêtre,
+ *   `clamp(56 px, 7 % de la hauteur, 72 px)` (`--main-bande`, `src/styles.css`), soit 56 px à 800 de haut et
+ *   72 px à 1080. L'intervalle jugé est cette bande attendue ± 4 px (la même tolérance que 52–60 autour de 56) :
+ *   52–60 px à 1280 × 800, 68–76 px à 1920 × 1080 ;
+ * - **rien ne se pose sous la main**.
+ * Les bords du plateau restent **une règle de téléphone** : sur bureau la table est un rond plus étroit que la
+ * fenêtre, et la pile d'actions flotte à droite, hors du plateau, par construction (D-200 (1)).
+ * La bande 640–899 px, que D-200 ne tranche pas, ne juge que les règles génériques.
+ */
+const LARGEUR_BUREAU_MIN = 900;
+const BANDE_MAIN_BUREAU_MIN = 56;
+const BANDE_MAIN_BUREAU_MAX = 72;
+const BANDE_MAIN_BUREAU_TOLERANCE = 4;
+const estBureau = (viewport) => viewport.width >= LARGEUR_BUREAU_MIN;
+/** La bande de la main attendue sur bureau pour cette hauteur de fenêtre : le `clamp` de `--main-bande`. */
+const bandeMainBureau = (hauteur) =>
+  Math.min(BANDE_MAIN_BUREAU_MAX, Math.max(BANDE_MAIN_BUREAU_MIN, Math.round(hauteur * 0.07)));
+
+/**
  * Mesure, **dans le navigateur**, le haut et le bas de chaque cible, et la limite à ne pas
  * franchir : le haut de la barre de navigation fixe (ou le bas de la fenêtre sans elle).
  *
@@ -398,9 +419,9 @@ const MARGE_MIN = 20;
  * Les défauts mesurés, et **chacun mord** :
  * - l'élément qui **sort** de la fenêtre (bas au-delà de la barre de navigation, ou côtés) ;
  * - celui qui n'a **pas la marge** de D-094 (3), sous soi, jusqu'à la fenêtre ;
- * - la main rognée sous son plancher de 44 px (#741) ; sur téléphone portrait seulement, sa hauteur
- *   visible hors de 52–60 px (#743) ;
- * - sur téléphone portrait seulement (`estTelephonePortrait`) : **rien ne se pose sous la main** (D-193 (3))
+ * - la main rognée sous son plancher de 44 px (#741) ; sur téléphone portrait, sa hauteur visible hors de
+ *   52–60 px (#743) ; sur bureau (≥ 900 px, D-200), hors de la bande attendue ± 4 px (`bandeMainBureau`) ;
+ * - sur téléphone portrait (`estTelephonePortrait`) et sur bureau (`estBureau`) : **rien ne se pose sous la main** (D-193 (3))
  *   — sous le bas visible de la main, pas sous son haut ;
  * - la **pile d'actions du tour** (D-193) : dans la fenêtre, pas sur la main, pas rognée par la
  *   table, ses boutons atteignables, les cibles de 44 px ; sur téléphone, dans les bords du plateau ;
@@ -512,8 +533,17 @@ function controlesHauteur({
   // #741/#743 — la hauteur visible de la main. Elle se juge à chaque passage, D-193 la rendant rognée
   // en permanence.
   // Les règles de téléphone portrait (D-193) : la hauteur visible de 52–60 px, « rien sous la main »,
-  // et les bords du plateau. Sur PC et grand écran la main n'est pas rognée : elles ne s'y jugent pas.
+  // et les bords du plateau. Sur bureau (D-200), la hauteur visible (suivant la fenêtre) et « rien sous la
+  // main » s'y jugent aussi ; les bords du plateau, non.
   const telephone = estTelephonePortrait(viewport);
+  const bureau = estBureau(viewport);
+  // Les bornes visibles de la main : 52–60 px sur téléphone, la bande attendue ± 4 px sur bureau (D-200).
+  const [mainMin, mainMax] = bureau
+    ? [
+        bandeMainBureau(viewport.height) - BANDE_MAIN_BUREAU_TOLERANCE,
+        bandeMainBureau(viewport.height) + BANDE_MAIN_BUREAU_TOLERANCE
+      ]
+    : [MAIN_VISIBLE_MIN, MAIN_VISIBLE_MAX];
 
   if (rognee) {
     const visible = main.visible;
@@ -523,11 +553,12 @@ function controlesHauteur({
         `${main.nom} rognée n'a que ${visible} px de hauteur visible (${lieu}) : ` +
           `${PLANCHER_MAIN_VISIBLE} px au moins (#741)`
       );
-    } else if (telephone && (visible < MAIN_VISIBLE_MIN || visible > MAIN_VISIBLE_MAX)) {
-      // #743 — la composition cible montre la tête des cartes sur 52–60 px (cible 56), sur téléphone.
+    } else if ((telephone || bureau) && (visible < mainMin || visible > mainMax)) {
+      // #743 — la composition cible montre la tête des cartes sur 52–60 px (cible 56), sur téléphone ;
+      // D-200 — sur bureau, la bande attendue pour la hauteur de la fenêtre ± 4 px.
       problemes.push(
         `${main.nom} rognée a une hauteur visible de ${visible} px (${lieu}) : ` +
-          `${MAIN_VISIBLE_MIN}–${MAIN_VISIBLE_MAX} px attendus (#743)`
+          `${mainMin}–${mainMax} px attendus (${bureau ? 'D-200' : '#743'})`
       );
     }
   }
@@ -536,7 +567,7 @@ function controlesHauteur({
   // « Sous la main » = commence au-dessus du **bas visible** de la main (le bas, borné par la limite),
   // pas au haut : le haut de la main est occupé par ses propres contenus (pastille, titre sr-only).
   // Un élément rendu sous ce bas est nommé, avec sa position ; c'est ce qui aurait rétabli la barre d'action.
-  if (telephone && main?.present && typeof main.bas === 'number') {
+  if ((telephone || bureau) && main?.present && typeof main.bas === 'number') {
     const basVisibleMain = Math.min(main.bas, limite);
     for (const { nom, haut } of sousLaMain) {
       if (haut < basVisibleMain - 0.5) continue;
@@ -703,6 +734,44 @@ async function jusquAUnePression(page) {
     await page.waitForTimeout(1200);
   }
   return null;
+}
+
+/**
+ * **L'instant « Rebut ouvert »** (#740, critère 7) : le panneau de Rebut est non modal et ne doit pas faire
+ * défiler la page. On ouvre le Rebut de **chaque** camp (l'adversaire puis le joueur, un à la fois) au
+ * premier tour, puis une seconde fois après quelques tours (jusqu'à une Pression jouable) où le Rebut a plus
+ * de chances de porter des cartes ; à chaque ouverture, `scrollY` est écrit dans la sortie et le contrôle de hauteur
+ * habituel juge le reste (défilement, cibles de 44 px). Le nombre de cartes du panneau est écrit dans la sortie :
+ * un Rebut vide ne prouve la hauteur que d'un panneau vide, et c'est dit, pas masqué.
+ */
+async function mesurerRebutOuvert(browser) {
+  const instant = INSTANTS_COMBAT[0];
+  const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true });
+  const ouvrirLesDeux = async (etape) => {
+    const boutons = page.getByRole('button', { name: /^Consulter le Rebut/ });
+    const n = await boutons.count();
+    if (n < 2) problems.push(`${ROUTE_COMBAT} · « Rebut ouvert » : ${n} bouton(s) de Rebut au lieu de 2 (#740)`);
+    for (let i = 0; i < n; i += 1) {
+      const bouton = boutons.nth(i);
+      // Un tap, pas un `click()` de Playwright : celui-ci fait défiler vers l'élément, et la pile du joueur est à
+      // moitié sortie de l'écran à dessein (D-193) — le défilement programmatique décalait la page de 7 px.
+      await bouton.evaluate((el) => el.click());
+      await page.waitForTimeout(250);
+      const cartes = await page.locator('.panneau-rebut__liste li').count();
+      const [scrollX, scrollY] = await page.evaluate(() => [window.scrollX, window.scrollY]);
+      const nom = `${new Date(instant).toISOString()} (Rebut ouvert, ${etape}, pile ${i + 1}/${n}, ${cartes} carte(s))`;
+      console.log(`combat · ${nom} · scrollX ${scrollX}, scrollY ${scrollY}`);
+      await controlerHauteur(page, nom, ROUTE_COMBAT);
+      if (i === 0)
+        await page.screenshot({ path: join(outDir, `combat-rebut-ouvert-${etape}.png`), fullPage: PLEINE_PAGE });
+      await bouton.evaluate((el) => el.click());
+      await page.waitForTimeout(150);
+    }
+  };
+  await ouvrirLesDeux('tour-1');
+  const tour = await jusquAUnePression(page);
+  if (tour !== null) await ouvrirLesDeux(`tour-${tour}`);
+  await context.close();
 }
 
 /**
@@ -1532,6 +1601,9 @@ try {
   // Le combat **avec une Pression jouable** (#320) : la barre y est à sa hauteur maximale, et
   // c'est là que « Fin du tour » passait sous la navigation.
   if (maVoie()) await mesurerAvecUnePression(browser);
+
+  // Le panneau de Rebut ouvert ne fait pas défiler la page (#740, critère 7).
+  if (maVoie()) await mesurerRebutOuvert(browser);
 
   // Le combat en mode `détaillé` (#292) : à l'arrivée, puis avec une Pression jouable ; et le pire
   // cas de `sobre` (#321), qui n'est joué nulle part ailleurs.

@@ -3884,8 +3884,8 @@ h2 {
   color: var(--gold-soft);
 }
 
-/* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite
-   dès que l'écran est assez large — l'écran de bureau a de la largeur, pas de hauteur. */
+/* La table : une colonne, à toute largeur — le plateau, puis la console du joueur (la main rognée en
+   bas de la fenêtre). Sur bureau comme sur téléphone, c'est une seule composition (D-200). */
 .battle__table {
   display: flex;
   flex-direction: column;
@@ -3899,8 +3899,6 @@ h2 {
   flex-direction: column;
   gap: 0.125rem;
 }
-
-/* Plateau à gauche, console à droite : voir « Combat : téléphone portrait et grand écran ». */
 
 /* La table (plan 1, DESIGN.md §2.6 règle 1) : **une** lumière, entre les deux Postes, et une
    vignette en ombre interne. Les quatre coins sont les plus sombres de l'écran. */
@@ -4526,16 +4524,20 @@ h2 {
   display: none;
 }
 
-/* Sur écran large, le panneau est une colonne de la console, collée en haut : il ne recouvre rien.
-   Le même média est lu par `InspecteurCombat` (`ECRAN_LARGE`). */
+/* Sur écran large (D-200), le panneau reste **flottant et non modal** (D-121) : il se pose **à côté**
+   de la carte décrite, à droite ou à gauche selon la place (`InspecteurCombat` pose `--inspecteur-gauche`
+   et `--inspecteur-haut`), et jamais sur la main rognée ni sur la pile d'actions : sa hauteur s'arrête
+   au-dessus de la bande de la main (`--main-bande`) et sa position ne passe pas sous la pile, à droite.
+   Pas de voile, pas de piège à focus : Échap le ferme. Le même média est lu par `InspecteurCombat`
+   (`ECRAN_LARGE`). */
 @media (min-width: 900px) {
   .battle .inspecteur {
     bottom: auto;
-    left: auto;
-    position: sticky;
+    left: var(--inspecteur-gauche, 1rem);
+    max-height: calc(100dvh - var(--inspecteur-haut, 5rem) - var(--main-bande, 4.5rem) - 1.5rem);
     right: auto;
-    top: 0.5rem;
-    width: 100%;
+    top: var(--inspecteur-haut, 5rem);
+    width: 18rem;
   }
 }
 
@@ -5853,15 +5855,6 @@ h2 {
     position: absolute;
     white-space: nowrap;
     width: 1px;
-  }
-}
-
-@media (min-width: 900px) {
-  .battle__table {
-    align-items: start;
-    display: grid;
-    gap: 0.85rem;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   }
 }
 
@@ -8882,7 +8875,7 @@ h2 {
 /* La main ancrée au bas de la fenêtre, rognée (D-182 (1), #743) — téléphone seulement.
    Les actions du tour ne sont plus sous la main : elles se posent sur la table (`.actions-flottantes`). La main est un éventail dont seule la
    tête dépasse (~56 px), et le titre « Ta main » devient une pastille de décompte sur son bord. */
-@media (max-width: 639px) {
+@media (max-width: 639px), (min-width: 900px) {
   .battle__console {
     gap: 0;
   }
@@ -9173,19 +9166,35 @@ h2 {
   text-transform: uppercase;
 }
 
-/* Lisibilité de la main au repos, à 56 px visibles (D-182, #744) : le nom passe **en tête** de la
-   carte — le pied, rogné par le bas de la fenêtre, n'est plus lu — sous la pastille de coût, avec
-   un voile sombre qui tient la lecture sur l'illustration. Le plancher est `--fs-xs` (D-164 (1)). */
-@media (max-width: 639px) {
-  .battle .hand .card__voile {
-    background: linear-gradient(180deg, rgb(0 0 0 / 82%) 0%, rgb(0 0 0 / 55%) 70%, transparent 100%);
-    bottom: auto;
-    inset-inline: 0;
-    padding: 0.2rem 0.2rem 0.5rem 1.55rem;
-    top: 0;
+/* En main, le voile précède l'illustration dans le DOM (`CardView enMain`) : l'illustration, posée en absolu,
+   se peindrait **par-dessus** le nom. Le voile passe devant, à toutes les largeurs (le DOM ne change pas
+   avec le média). */
+.card--en-main .card__voile {
+  z-index: 1;
+}
+
+/* Lisibilité de la main au repos, à 56 px visibles (D-182, #744) : `CardView enMain` met le nom **en tête**
+   du DOM, et ici en tête de la carte — le pied, rogné par le bas de la fenêtre, n'est plus lu. La face se
+   remplit **par le haut** (`flex-start`, la règle de plateau la remplit par le bas), le nom se pose **sous
+   les deux pastilles** (la faction à gauche, le Seuil à droite, 1,35 rem + 4 %) sur un voile sombre, au
+   plancher `--fs-xs` (D-164 (1)) : deux lignes de 11,2 px tiennent dans la bande de 56 px. Le genre de la
+   carte (« Entrant ») et la barre de Stress, qui n'a rien à mesurer en main, restent hors de la bande. */
+@media (max-width: 639px), (min-width: 900px) {
+  .battle .hand .card--en-main .card__face {
+    justify-content: flex-start;
   }
 
-  .battle .hand .card__name {
+  .battle .hand .card--en-main .card__voile {
+    background: linear-gradient(180deg, rgb(0 0 0 / 82%) 0%, rgb(0 0 0 / 78%) 80%, rgb(0 0 0 / 40%) 100%);
+    padding: 1.45rem 0.2rem 0.15rem;
+    position: relative;
+  }
+
+  .battle .hand .card--en-main .card__stage {
+    display: none;
+  }
+
+  .battle .hand .card--en-main .card__name {
     font-size: var(--fs-xs);
     line-height: 1.1;
   }
@@ -9196,7 +9205,7 @@ h2 {
    table dépasse de l'écran et son jonc ne se devine qu'aux bords ; la bague centrale sépare les
    deux camps ; les piles sont posées **sur les côtés**, à moitié sorties de l'écran (celles de la
    Direction à gauche, les tiennes à droite) ; au premier affichage, la caméra **zoome** sur la table. */
-@media (max-width: 639px) {
+@media (max-width: 639px), (min-width: 900px) {
   .battle__table {
     overflow: hidden;
     position: relative;
@@ -9318,7 +9327,7 @@ h2 {
 /* Le message du tour reste une **petite bulle** (retour du propriétaire) : une ligne ou deux, jamais
    un bloc qui couvre la Direction. Le panneau du café n'étire plus la bulle, et sa raison — déjà
    dite par la ligne de portée juste au-dessus — ne se répète pas. */
-@media (max-width: 639px) {
+@media (max-width: 639px), (min-width: 900px) {
   .battle .combat-superpose {
     max-height: 34%;
   }
@@ -9344,36 +9353,113 @@ h2 {
   }
 }
 
-/* ---------- Écran large (≥ 900 px) : plateau à gauche, main à droite (D-142 (4), D-193 (5), #750) ----------
+/* ---------- Écran large (≥ 900 px) : la composition du téléphone (D-200, #790) ----------
 
-   Le plateau tient la colonne de gauche (`.battle__table`, deux colonnes). La colonne de droite porte
-   la **main entière**, en haut, et la pile d'actions se pose **en bas** de cette colonne, sous la main.
-   La bulle du tour reste au-dessus du plateau seulement : elle ne couvre jamais la main. Les quatre
-   piles restent posées sur les côtés de la table, entières. Le téléphone (≤ 639 px) n’est pas touché. */
+   Une **seule composition** à toute largeur : la table ronde centrée, la main rognée au bas de la
+   fenêtre, « Fin du tour » flottant à droite. La colonne de droite de #750 (la main entière en haut,
+   la pile d'actions dessous, le plateau en colonne de gauche) n'existe plus : `.battle__table` n'est
+   plus une grille. Les règles de la composition (table zoomée, main rognée, bulle, voile du nom) sont
+   celles du média partagé `(max-width: 639px), (min-width: 900px)` ci-dessus ; ce bloc ne porte que
+   ce que la largeur change : les **tailles**, qui suivent la fenêtre, et l'emplacement des piles.
+   La bande 640–899 px n'est pas tranchée par D-200 : elle garde sa disposition d'avant.
+
+   Les tailles (mesurées à 1280 × 800 et 1920 × 1080, `scripts/preuves/capturer.mjs`) :
+   - la table est un **rond** de diamètre `--table-d` (91 % de la hauteur − 8,3 rem : 595 px à 800 de haut, 850 à 1080, la hauteur mesurée du plateau) ; le Poste, le Banc et
+     la carte de main gardent les tailles de D-158 (`--poste-w`, `--banc-w`, `--carte-w`), qui suivent
+     `100dvh` ;
+   - la main montre sa **bande de tête** : `--main-bande` = 7 % de la hauteur de la fenêtre, entre
+     56 px (3,5 rem, la bande du téléphone) et 72 px (4,5 rem). 56 px à 800 px de haut, 72 px à 1080 :
+     la carte de main grandit avec la fenêtre (72 → 128 px), la bande garde donc un tiers de la carte
+     visible, et le nom et le coût restent lisibles ;
+   - les quatre piles sont posées **entières** sur les côtés de la table, sans être rognées par le bord
+     de la fenêtre : la place existe sur bureau, et un décompte à moitié sorti ne se lit pas. */
 @media (min-width: 900px) {
-  /* La bulle du tour occupe la colonne du plateau, pas la largeur de l'écran : sinon elle recouvrait
-     la main, posée à droite (mesuré à 1280 × 800 : la bulle allait jusqu'au bord, `left` et `right` à
-     0,5 rem). La largeur suit la colonne `minmax(0, 1.15fr)` de `.battle__table`, moins son filet. */
-  .battle .combat-superpose {
-    right: auto;
-    /* La colonne du plateau, moins la place des piles qui bordent la table (10,5 rem) : la bulle ne
-       recouvre jamais un Deck ou un Rebut (`text-occlusion`, run #844, #784). */
-    width: calc((100% - 0.85rem) * 1.15 / 2.15 - 10.5rem);
+  .app-shell:has(.battle) {
+    --main-bande: clamp(3.5rem, 7dvh, 4.5rem);
+    --table-d: calc(91dvh - 8.3rem);
+    /* Comme sur téléphone, la main s'arrête à 20 px du bas de la fenêtre (D-094 (3), mesurée par `capturer`). */
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   }
 
-  /* La pile d'actions descend au bas de la colonne de droite, sous la main, et ne recouvre jamais la
-     main : elle tient dans la moitié basse de `.battle`, la main restant dans la haute. */
-  .battle .actions-flottantes {
-    bottom: 1rem;
-    max-height: 50%;
-    top: auto;
-    transform: none;
+  /* Le Poste et le Banc : la formule de D-158, qui réservait 15 rem à la main entière, réserve ici 17 rem —
+     la bande de la main rend 100 px, mais le plateau garde de quoi tenir sans défiler à 800 px de haut
+     (mesuré : 15 rem faisait défiler de 6 px à 1280 × 800). */
+  .board__zone {
+    --poste-w: clamp(6rem, calc((100dvh - 17rem) / 4.4), 11rem);
+    --banc-w: clamp(4rem, calc(var(--poste-w) * 0.64), 7rem);
   }
 
-  /* La main entière : la hauteur de la carte et de son inclinaison, plus une marge sous les cartes du
-     bord, que le recadrage du conteneur (`overflow: hidden`) rognait. */
+  /* Le pas-à-pas du premier combat (#143) ajoute un panneau de ~100 px en haut : tant qu'il est ouvert, le
+     plateau rend 5 rem de plus (mesuré : 35 px de défilement à 1280 × 800, 26 px à 1920 × 1080, D-103). */
+  .app-shell:has(.pas-a-pas) .board__zone {
+    --poste-w: clamp(6rem, calc((100dvh - 22rem) / 4.4), 11rem);
+    --banc-w: clamp(4rem, calc(var(--poste-w) * 0.64), 7rem);
+  }
+
+  /* Le combat tient dans la fenêtre : le plateau prend l'espace libre, la main reste au bas. */
+  .app-shell:has(.battle) .main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .battle {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .battle__table {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .board {
+    flex: 1 1 auto;
+    justify-content: space-between;
+  }
+
+  /* La table est un rond centré, pas la largeur de la fenêtre. */
+  .battle .board {
+    align-self: center;
+    width: min(100%, var(--table-d));
+  }
+
+  .battle .board::after {
+    aspect-ratio: 1;
+    inset: 1% auto 1% 50%;
+    transform: translateX(-50%);
+  }
+
+  .battle .board::before {
+    height: clamp(12rem, 18dvh, 17rem);
+    width: clamp(12rem, 18dvh, 17rem);
+  }
+
+  /* La main : la bande de tête, rognée par le bas de la fenêtre. */
   .battle .hand {
-    height: calc(var(--carte-w) * 88 / 63 + 1.2rem);
-    padding-bottom: 0.4rem;
+    height: var(--main-bande);
+    padding-inline: 1.25rem;
+  }
+
+  /* Les piles : entières, sur les côtés de la table (Direction à gauche, toi à droite). */
+  .battle .board__side.is-direction .piles {
+    left: 0.4rem;
+    top: 0.4rem;
+  }
+
+  .battle .board__side:not(.is-direction) .piles {
+    bottom: 0.4rem;
+    right: 0.4rem;
+  }
+
+  /* La bulle du tour : dans la marge **à gauche de la table ronde**, jamais dessus. Au-dessus du rond, elle
+     recouvrait les Planqués du Banc de la Direction (leur Seuil, 100 % couvert) : `text-occlusion` (#784)
+     la refuse. Sa largeur est la place qui reste entre le bord de la fenêtre et le rond. */
+  .battle .combat-superpose {
+    left: 0.75rem;
+    right: auto;
+    width: min(18rem, calc(50% - var(--table-d) / 2 - 1.5rem));
   }
 }

@@ -1158,11 +1158,13 @@ describe('`npm run capturer` — la pile d’actions du tour et le bas de l’é
 
 /**
  * Ticket D-193 — **la portée des règles de téléphone** : « rien ne se pose sous la main », la hauteur visible
- * de 52–60 px et les bords du plateau ne se jugent que sur un téléphone en portrait (largeur ≤ 639, hauteur >
- * largeur). Sur PC et grand écran, la main n'est pas rognée : seules les règles génériques s'y appliquent.
- * Chaque portée a son cas fautif, et le cas fautif est jugé sous un gabarit de téléphone.
+ * de 52–60 px et les bords du plateau se jugent sur un téléphone en portrait (largeur ≤ 639, hauteur >
+ * largeur). **D-200 (#790)** étend à bureau (≥ 900 px) « rien sous la main » et la hauteur visible — selon la
+ * fenêtre : 52–60 px à 1280 × 800, 68–76 px à 1920 × 1080 — mais **pas** les bords du plateau. La bande
+ * 640–899 px n'est pas tranchée : seules les règles génériques s'y appliquent.
+ * Chaque portée a son cas fautif.
  */
-describe('`npm run capturer` — la portée des règles de téléphone (D-193)', () => {
+describe('`npm run capturer` — la portée des règles de téléphone et de bureau (D-193, D-200)', () => {
   const PC: Record<string, number> = { width: 1280, height: 800 };
   const TELEPHONE: Record<string, number> = { width: 420, height: 900 };
   const PAYSAGE: Record<string, number> = { width: 740, height: 360 };
@@ -1180,8 +1182,36 @@ describe('`npm run capturer` — la portée des règles de téléphone (D-193)',
   /** Un élément rendu sous la main, tel que `mesureHauteur` le relève (`haut` et `bas` visibles). */
   const sous = (nom: string, haut: number, bas: number) => ({ nom, haut, bas });
 
-  it('une main de 150 px visibles à 1280 × 800 ne produit aucun problème (pas de règle de téléphone)', () => {
-    expect(controle(PC, [main(630, 780, 150)])).toEqual([]);
+  const GRAND: Record<string, number> = { width: 1920, height: 1080 };
+  const TABLETTE: Record<string, number> = { width: 800, height: 1000 };
+
+  it('bureau (D-200) : une main rognée à 56 px visibles à 1280 × 800 passe, une main de 150 px est nommée', () => {
+    expect(controle(PC, [main(724, 780, 56)], { limite: 800 })).toEqual([]);
+    const problemes = controle(PC, [main(630, 780, 150)]);
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain('la main rognée a une hauteur visible de 150 px');
+    expect(problemes[0]).toContain('52–60 px attendus (D-200)');
+  });
+
+  it('bureau (D-200) : la bande suit la hauteur de la fenêtre — 72 px à 1920 × 1080, mais 72 px est refusé à 1280 × 800', () => {
+    expect(controle(GRAND, [main(988, 1060, 72)])).toEqual([]);
+    // La bande du téléphone (56 px) est trop mince pour une fenêtre de 1080 px : 68–76 px attendus.
+    const mince = controle(GRAND, [main(1004, 1060, 56)]);
+    expect(mince).toHaveLength(1);
+    expect(mince[0]).toContain('68–76 px attendus (D-200)');
+    // Et la bande de 1080 est trop épaisse pour 800 px de haut : 52–60 px attendus.
+    expect(controle(PC, [main(708, 780, 72)])).toHaveLength(1);
+  });
+
+  it('bureau (D-200) : le plancher de 44 px et les bornes sont mordus aux deux bords de l’intervalle', () => {
+    expect(controle(PC, [main(728, 780, 52)])).toEqual([]);
+    expect(controle(PC, [main(720, 780, 60)])).toEqual([]);
+    expect(controle(PC, [main(729, 780, 51)])).toHaveLength(1);
+    expect(controle(PC, [main(719, 780, 61)])).toHaveLength(1);
+  });
+
+  it('la bande 640–899 px, que D-200 ne tranche pas, ne juge que les règles génériques', () => {
+    expect(controle(TABLETTE, [main(830, 980, 150)], { limite: 1000 })).toEqual([]);
   });
 
   it('la même main de 150 px visibles à 420 × 900 est nommée (#743)', () => {
@@ -1225,10 +1255,19 @@ describe('`npm run capturer` — la portée des règles de téléphone (D-193)',
     expect(controle(TELEPHONE, [main(824, 880, 56)], { limite: 900, sousLaMain: [sous('h2', 825, 845)] })).toEqual([]);
   });
 
-  it('rien sous la main : la règle ne s’applique pas à 1280 × 800, même avec un élément sous la main', () => {
+  it('rien sous la main : la règle s’applique aussi à 1280 × 800 (D-200), et ne nomme pas un calque dans la main', () => {
     const mesures = [main(704, 760, 56)];
-    expect(controle(PC, mesures, { sousLaMain: [sous('path', 800, 820)] })).toEqual([]);
+    const problemes = controle(PC, mesures, { sousLaMain: [sous('path', 800, 820)] });
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain('élément « path » rendu sous la main (1280 × 800)');
     expect(controle(TELEPHONE, mesures, { sousLaMain: [sous('path', 800, 820)] })).toHaveLength(1);
+    expect(controle(PC, mesures, { sousLaMain: [sous('h2', 706, 726)] })).toEqual([]);
+  });
+
+  it('rien sous la main : la bande 640–899 px n’est pas jugée', () => {
+    expect(controle(TABLETTE, [main(830, 980, 150)], { limite: 1000, sousLaMain: [sous('path', 985, 995)] })).toEqual(
+      []
+    );
   });
 
   it('les bords du plateau ne se jugent que sur téléphone : une pile hors du plateau est nommée à 420 × 900 seulement', () => {
@@ -1287,5 +1326,6 @@ describe('`npm run capturer` — la portée des règles de téléphone (D-193)',
     expect(source).toContain("el.closest('.bottom-nav, .sr-only, .hand-panel')");
     expect(source).toContain('if (r.width <= 1 || r.height <= 1) continue;');
     expect(source).toContain('const telephone = estTelephonePortrait(viewport);');
+    expect(source).toContain('const bureau = estBureau(viewport);');
   });
 });

@@ -23,15 +23,54 @@ import { Dialog, DialogClose, DialogPanneau, DialogPortal, DialogTitle } from '@
 const DELAI_SURVOL_MS = 300;
 
 /**
- * **L'écran large** (D-158) : à partir de 900 px, le panneau est une colonne de la console, pas une
- * feuille basse. C'est le média de `styles.css` (« Sur écran large, le panneau… ») : les deux se
- * lisent ensemble, sinon le panneau calcule une feuille qu'il n'est pas.
+ * **L'écran large** (D-158, D-200) : à partir de 900 px, le panneau n'est plus une feuille basse mais un
+ * panneau **flottant à côté de la carte** décrite. C'est le média de `styles.css` (« Sur écran large, le
+ * panneau… ») : les deux se lisent ensemble, sinon le panneau calcule une feuille qu'il n'est pas.
  */
 export const ECRAN_LARGE = '(min-width: 900px)';
 
 function ecranLarge(): boolean {
   // jsdom n'a pas `matchMedia` : la largeur seule y décide, comme avant D-142.
   return typeof window.matchMedia === 'function' ? window.matchMedia(ECRAN_LARGE).matches : window.innerWidth >= 900;
+}
+
+/** La largeur du panneau flottant de bureau (18 rem, `styles.css`) et l'espace laissé entre lui et sa carte. */
+const LARGEUR_PANNEAU_PX = 288;
+const ECART_PX = 12;
+/** Le haut du plateau (sous l'en-tête du combat) et la hauteur qu'on réserve au panneau au moins. */
+const HAUT_MIN_PX = 64;
+const HAUTEUR_PANNEAU_MIN_PX = 200;
+
+/**
+ * **Où se pose le panneau sur bureau** (D-200) : à côté de la carte décrite — à droite si la place
+ * existe jusqu'à la pile d'actions (ou au bord de la fenêtre), sinon à gauche —, aligné sur le haut de la
+ * carte, et **jamais sur la main rognée** : le haut est borné pour que le panneau s'arrête au-dessus d'elle.
+ * Pur et testé : il ne lit que des rectangles.
+ */
+export function placerPanneau(
+  carte: { left: number; right: number; top: number },
+  fenetre: { largeur: number; hauteur: number },
+  /** Le bord gauche de la pile d'actions (elle flotte à droite), ou `null` si elle est absente. */
+  actionsGauche: number | null,
+  /** Le haut de la main rognée, ou `null` si elle est absente. */
+  mainHaut: number | null
+): { gauche: number; haut: number } {
+  const limiteDroite = Math.min(
+    fenetre.largeur - ECART_PX,
+    actionsGauche !== null ? actionsGauche - ECART_PX : Infinity
+  );
+  const aDroite = carte.right + ECART_PX;
+  const aGauche = carte.left - ECART_PX - LARGEUR_PANNEAU_PX;
+  const gauche =
+    aDroite + LARGEUR_PANNEAU_PX <= limiteDroite
+      ? aDroite
+      : aGauche >= ECART_PX
+        ? aGauche
+        : // Ni l'un ni l'autre : le côté où il reste le plus de place, borné à la fenêtre.
+          Math.max(ECART_PX, Math.min(limiteDroite - LARGEUR_PANNEAU_PX, aDroite));
+  const basMax = (mainHaut ?? fenetre.hauteur) - ECART_PX;
+  const haut = Math.round(Math.max(HAUT_MIN_PX, Math.min(carte.top, basMax - HAUTEUR_PANNEAU_MIN_PX)));
+  return { gauche: Math.round(gauche), haut };
 }
 
 /** La carte du plateau portant ce `uid`, pour rendre le focus à la carte qu'on vient de fermer. */
@@ -324,7 +363,7 @@ export function CarteSurvolable({
 /**
  * Le **panneau** : la même fiche, plus les gestes de la carte (`gestes`, absent pour une carte
  * qu'on ne joue pas). Non modal, sans voile : il se pose sous la carte décrite (feuille basse sur
- * téléphone, colonne à partir de 900 px). Échap le ferme et rend le focus à la carte.
+ * téléphone, panneau flottant à côté de la carte à partir de 900 px, D-200). Échap le ferme et rend le focus à la carte.
  */
 export function InspecteurCombat({
   ouvert,
@@ -357,6 +396,7 @@ export function InspecteurCombat({
   const avant = useRef<HTMLElement | null>(null);
   const repere = useRef<HTMLDivElement | null>(null);
   const [haut, setHaut] = useState<number | null>(null);
+  const [gauche, setGauche] = useState<number | null>(null);
 
   useEffect(() => {
     if (ancre) derniere.current = ancre;
@@ -373,6 +413,22 @@ export function InspecteurCombat({
   useLayoutEffect(() => {
     if (!ouvert || !ancre) return;
     const carte = trouverCarte(ancre);
+    if (carte && ecranLarge()) {
+      // Bureau (D-200) : à côté de la carte, jamais sur la main rognée ni sur la pile d'actions.
+      const r = carte.getBoundingClientRect();
+      const actions = document.querySelector('.actions-flottantes')?.getBoundingClientRect();
+      const main = document.querySelector('.hand')?.getBoundingClientRect();
+      const place = placerPanneau(
+        r,
+        { largeur: window.innerWidth, hauteur: window.innerHeight },
+        actions && actions.width > 0 ? actions.left : null,
+        main ? main.top : null
+      );
+      setHaut(place.haut);
+      setGauche(place.gauche);
+      return;
+    }
+    setGauche(null);
     if (!carte || ecranLarge()) {
       setHaut(null);
       return;
@@ -393,7 +449,14 @@ export function InspecteurCombat({
         <DialogPortal container={repere}>
           <DialogPanneau
             className="inspecteur"
-            style={haut !== null ? ({ '--inspecteur-haut': `${haut}px` } as CSSProperties) : undefined}
+            style={
+              haut !== null
+                ? ({
+                    '--inspecteur-haut': `${haut}px`,
+                    ...(gauche !== null ? { '--inspecteur-gauche': `${gauche}px` } : {})
+                  } as CSSProperties)
+                : undefined
+            }
             initialFocus={garderLeFocus ? false : undefined}
             finalFocus={() => (avant.current?.isConnected ? avant.current : focusable(trouverCarte(derniere.current)))}
           >

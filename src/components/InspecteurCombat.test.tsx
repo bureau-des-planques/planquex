@@ -6,7 +6,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getCard } from '@/data';
 import type { Card, CardInstance } from '@/data/types';
-import { CarteSurvolable, FicheCarte, InspecteurCombat } from '@/components/InspecteurCombat';
+import { CarteSurvolable, FicheCarte, InspecteurCombat, placerPanneau } from '@/components/InspecteurCombat';
 
 /**
  * **L'inspecteur du combat — deux modes, un contenu** (`SPEC-COMBAT-UI` §8 T4, #287).
@@ -333,5 +333,55 @@ describe('CarteSurvolable — mes cartes s’ouvrent vers l’adversaire (#525)'
       hauteur.mockRestore();
       rect.mockRestore();
     }
+  });
+});
+
+/**
+ * **Le panneau flottant de bureau** (D-200, #790) : à côté de la carte, jamais sur la main rognée ni sur
+ * la pile d'actions. Chaque règle a son cas fautif (AGENTS.md §6) : on y compare la position calculée à
+ * celle qui violerait la règle.
+ */
+describe('placerPanneau : où le panneau se pose sur bureau (D-200)', () => {
+  const FENETRE = { largeur: 1280, hauteur: 800 };
+  const LARGEUR = 288;
+
+  it('se pose à droite de la carte quand la place existe jusqu’à la pile d’actions', () => {
+    const { gauche } = placerPanneau({ left: 300, right: 380, top: 250 }, FENETRE, 1144, 724);
+    expect(gauche).toBe(392);
+    expect(gauche + LARGEUR).toBeLessThanOrEqual(1144 - 12);
+  });
+
+  it('passe à gauche de la carte quand la pile d’actions bloquerait la droite', () => {
+    const { gauche } = placerPanneau({ left: 800, right: 880, top: 250 }, FENETRE, 1144, 724);
+    expect(gauche + LARGEUR).toBeLessThanOrEqual(800 - 12);
+    // Le cas fautif : à droite, le panneau (892 à 1180) recouvrirait la pile (1144 et au-delà).
+    expect(880 + 12 + LARGEUR).toBeGreaterThan(1144);
+  });
+
+  it('ne recouvre jamais la carte décrite', () => {
+    for (const left of [20, 300, 600, 900, 1100]) {
+      const carte = { left, right: left + 80, top: 300 };
+      const { gauche } = placerPanneau(carte, FENETRE, 1144, 724);
+      const recouvre = gauche < carte.right && gauche + LARGEUR > carte.left;
+      // Hors le cas où ni la droite ni la gauche ne tient (carte contre la pile) : on borne alors à la fenêtre.
+      if (left <= 900) expect(recouvre).toBe(false);
+    }
+  });
+
+  it('reste dans la fenêtre à gauche, sans pile d’actions', () => {
+    const { gauche } = placerPanneau({ left: 1150, right: 1230, top: 250 }, FENETRE, null, 724);
+    expect(gauche).toBeGreaterThanOrEqual(12);
+    expect(gauche + LARGEUR).toBeLessThanOrEqual(1150 - 12);
+  });
+
+  it('le haut est borné au-dessus de la main rognée : une carte basse ne descend pas le panneau sur elle', () => {
+    const { haut } = placerPanneau({ left: 300, right: 380, top: 700 }, FENETRE, 1144, 724);
+    expect(haut).toBeLessThanOrEqual(724 - 12 - 200);
+    // Le cas fautif : poser le panneau au haut de la carte (700 px) le ferait recouvrir la main (724 px).
+    expect(700 + 200).toBeGreaterThan(724);
+  });
+
+  it('le haut ne remonte pas sous l’en-tête du combat', () => {
+    expect(placerPanneau({ left: 300, right: 380, top: 10 }, FENETRE, 1144, 724).haut).toBe(64);
   });
 });
