@@ -17,7 +17,9 @@ import { analyserArguments, composer, prochainNumero } from './dispatch.mjs';
 
 describe('prochainNumero', () => {
   it('prend le maximum + 1, sur trois chiffres', () => {
-    const journal = ['| D-140 | 28/10/2026 | a |', '| D-143 | 28/10/2026 | b |', '| D-141 | 28/10/2026 | c |'].join('\n');
+    const journal = ['| D-140 | 28/10/2026 | a |', '| D-143 | 28/10/2026 | b |', '| D-141 | 28/10/2026 | c |'].join(
+      '\n'
+    );
     expect(prochainNumero(journal)).toBe('D-144');
   });
 
@@ -46,7 +48,9 @@ describe('analyserArguments', () => {
   it('refuse un ticket manquant, un ticket non numérique, un agent inconnu', () => {
     expect(analyserArguments([], { racine: '/x' }).erreurs.join(' ')).toMatch(/ticket manquant/);
     expect(analyserArguments(['--ticket', 'abc'], { racine: '/x' }).erreurs.join(' ')).toMatch(/ticket invalide/);
-    expect(analyserArguments(['--ticket', '1', '--agent', 'nimporte'], { racine: '/x' }).erreurs.join(' ')).toMatch(/agent inconnu/);
+    expect(analyserArguments(['--ticket', '1', '--agent', 'nimporte'], { racine: '/x' }).erreurs.join(' ')).toMatch(
+      /agent inconnu/
+    );
   });
 
   it('accepte --reprise', () => {
@@ -61,8 +65,21 @@ describe('analyserArguments', () => {
   });
 });
 
+/** Vrai si la définition de fini met `npm test` (entier) au nombre des exigences de l'agent. */
+function imposeLaBatterieComplete(fini: string): boolean {
+  return fini
+    .split('\n')
+    .filter((l) => l.startsWith('- '))
+    .some((l) => /`npm test`/.test(l));
+}
+
 describe('composer', () => {
-  const ticket = { number: 427, title: 'Sortir en un geste', body: 'Le corps du ticket.', labels: [{ name: 'enhancement' }] };
+  const ticket = {
+    number: 427,
+    title: 'Sortir en un geste',
+    body: 'Le corps du ticket.',
+    labels: [{ name: 'enhancement' }]
+  };
   const base = { ticket, agent: 'codeur', branche: 'agent/427', worktree: '/wt/427', decision: null };
 
   it('porte le ticket, le chemin absolu, la branche et la définition de fini', () => {
@@ -71,8 +88,8 @@ describe('composer', () => {
     expect(p).toContain('`/wt/427`');
     expect(p).toContain('`agent/427`');
     expect(p).toContain('npm run check');
-    expect(p).toContain('garde-fous');
-    expect(p).toContain('jamais en parallèle');
+    expect(p).toContain('npx vitest run');
+    expect(p).toContain("par l'orchestrateur");
     expect(p).toContain('Le corps du ticket.');
     expect(p).toContain('enhancement');
   });
@@ -111,6 +128,24 @@ describe('composer', () => {
     expect(lecture).not.toContain('npm run garde-fous');
     expect(composer({ ...base, agent: 'redacteur' })).toContain('format:check');
     expect(composer(base)).toContain('npm run garde-fous');
+  });
+
+  it("D-203 : le codeur joue le ciblé, la batterie complète est celle de l'orchestrateur", () => {
+    const fini = composer(base).split('## Fini')[1].split('## Livraison')[0];
+    expect(fini).not.toMatch(/`npm test`, `npm run garde-fous`, `npm run build` : exit 0 chacun/);
+    expect(imposeLaBatterieComplete(fini)).toBe(false);
+    expect(fini).toContain('seulement');
+    expect(fini).toContain('scripts/ci/garde-fous.mjs');
+    expect(fini).toContain('une fois par PR');
+    expect(fini).toContain('réellement lancé');
+    // La reprise porte la même définition.
+    expect(composer({ ...base, reprise: true })).toContain('une fois par PR');
+  });
+
+  it("le contrôle mord : l'ancien gabarit, qui impose `npm test` entier à l'agent, est refusé", () => {
+    const ancien =
+      '- `npm run check`, `npm run format:check`, `npm test`, `npm run garde-fous`, `npm run build` : exit 0 chacun.';
+    expect(imposeLaBatterieComplete(ancien)).toBe(true);
   });
 });
 
